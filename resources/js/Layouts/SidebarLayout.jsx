@@ -287,7 +287,7 @@ export default function SidebarLayout({ children }) {
                                 {user?.name || 'Admin GG Farm'}
                             </div>
                             <div className="text-accent-light/70 text-[10px] font-mono">
-                                {user?.jabatan || 'Staff'}
+                                {user?.role_type === 'superadmin' ? 'Super Admin' : (user?.jabatan || 'Staff')}
                             </div>
                         </div>
                         <button

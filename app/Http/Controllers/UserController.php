@@ -20,7 +20,7 @@ class UserController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', Password::min(8)],
-            'divisi'   => ['required', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris'])],
+            'divisi'   => ['required', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris', 'Superadmin'])],
             'jabatan'  => ['required', 'string', 'max:255'],
             'status'   => ['sometimes', Rule::in(['Active', 'Inactive'])],
         ]);
@@ -47,7 +47,7 @@ class UserController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', Password::min(8)],
-            'divisi'   => ['required', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris'])],
+            'divisi'   => ['required', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris', 'Superadmin'])],
             'jabatan'  => ['required', 'string', 'max:255'],
             'status'   => ['required', Rule::in(['Active', 'Inactive'])],
         ]);

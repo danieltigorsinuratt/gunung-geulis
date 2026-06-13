@@ -18,13 +18,18 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@gmail.com',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-            'role_type' => 'superadmin',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'superadmin@gmail.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'role_type' => 'superadmin',
+                'divisi' => 'Superadmin',
+                'jabatan' => 'Super Admin',
+                'status' => 'Active',
+            ]
+        );
 
         User::factory()->create([
             'name' => 'Test User',

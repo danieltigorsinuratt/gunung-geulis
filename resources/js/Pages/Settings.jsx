@@ -383,6 +383,7 @@ const divisiColors = {
     'Tim Logistik': 'bg-[#DBEAFE] text-[#1D4ED8]',
     'Tim Legal': 'bg-[#FEF3C7] text-[#92400E]',
     'Sekretaris': 'bg-[#D1FAE5] text-[#065F46]',
+    'Superadmin': 'bg-[#F3E8FF] text-[#6B21A8]',
 };
 
 const statusColors = {
@@ -450,12 +451,13 @@ function ManageUserTab({ users = [] }) {
         logistik: users.filter(u => u.divisi === 'Tim Logistik').length,
         legal: users.filter(u => u.divisi === 'Tim Legal').length,
         sekretaris: users.filter(u => u.divisi === 'Sekretaris').length,
+        superadmin: users.filter(u => u.divisi === 'Superadmin').length,
     };
 
     return (
         <div className="flex flex-col gap-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div className="bg-white rounded-xl border border-surface-border p-4">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-primary-900/10 flex items-center justify-center">
@@ -512,6 +514,19 @@ function ManageUserTab({ users = [] }) {
                         </div>
                     </div>
                 </div>
+                <div className="bg-white rounded-xl border border-surface-border p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#F3E8FF] flex items-center justify-center">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M9 2L2 5V10C2 14.42 5.42 18 10 19C14.58 18 18 14.42 18 10V5L11 2C10.37 1.73 9.63 1.73 9 2Z" stroke="#6B21A8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p className="text-xs font-mono text-gray-500 uppercase">Superadmin</p>
+                            <p className="text-xl font-hanken font-bold text-[#6B21A8]">{stats.superadmin}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Search & Filter */}
@@ -526,7 +541,9 @@ function ManageUserTab({ users = [] }) {
                                     <path d="M12 12L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                                 </svg>
                                 <input
-                                    type="text"
+                                    type="search"
+                                    name="user-search"
+                                    autoComplete="off"
                                     placeholder="Cari nama atau email..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
@@ -543,6 +560,7 @@ function ManageUserTab({ users = [] }) {
                             <option value="Tim Logistik">Tim Logistik</option>
                             <option value="Tim Legal">Tim Legal</option>
                             <option value="Sekretaris">Sekretaris</option>
+                            <option value="Superadmin">Superadmin</option>
                         </select>
                     </div>
 
@@ -645,7 +663,15 @@ function ManageUserTab({ users = [] }) {
                                 <button 
                                     onClick={() => {
                                         setSelectedUser(user);
-                                        editForm.setData({ name: user.nama, email: user.email, divisi: user.divisi, jabatan: user.role, status: user.status });
+                                        const isDivisiValid = ['Tim Logistik', 'Tim Legal', 'Sekretaris', 'Superadmin'].includes(user.divisi);
+                                        editForm.setData({
+                                            name: user.nama,
+                                            email: user.email,
+                                            password: '',
+                                            divisi: isDivisiValid ? user.divisi : 'Tim Logistik',
+                                            jabatan: user.role,
+                                            status: user.status
+                                        });
                                         setIsEditOpen(true);
                                     }}
                                     className="p-1 rounded hover:bg-surface text-[#8B6914] transition-colors" 
@@ -713,7 +739,15 @@ function ManageUserTab({ users = [] }) {
                                     <button
                                         onClick={() => {
                                             setSelectedUser(user);
-                                            editForm.setData({ name: user.nama, email: user.email, divisi: user.divisi, jabatan: user.role, status: user.status });
+                                            const isDivisiValid = ['Tim Logistik', 'Tim Legal', 'Sekretaris', 'Superadmin'].includes(user.divisi);
+                                            editForm.setData({
+                                                name: user.nama,
+                                                email: user.email,
+                                                password: '',
+                                                divisi: isDivisiValid ? user.divisi : 'Tim Logistik',
+                                                jabatan: user.role,
+                                                status: user.status
+                                            });
                                             setIsEditOpen(true);
                                         }}
                                         className="text-[#8B6914] text-xs font-hanken font-bold hover:underline" 
@@ -792,12 +826,16 @@ function ManageUserTab({ users = [] }) {
                                 <select
                                     value={addForm.data.divisi}
                                     onChange={(e) => addForm.setData('divisi', e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-white rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                                    className={`w-full px-4 py-2.5 bg-white rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                        addForm.errors.divisi ? 'border-red-400' : 'border-surface-border'
+                                    }`}
                                 >
                                     <option value="Tim Logistik">Tim Logistik</option>
                                     <option value="Tim Legal">Tim Legal</option>
                                     <option value="Sekretaris">Sekretaris</option>
+                                    <option value="Superadmin">Superadmin</option>
                                 </select>
+                                {addForm.errors.divisi && <p className="text-xs text-red-500 font-hanken">{addForm.errors.divisi}</p>}
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-hanken font-bold text-gray-900">Jabatan</label>
@@ -924,12 +962,16 @@ function ManageUserTab({ users = [] }) {
                                 <select
                                     value={editForm.data.divisi}
                                     onChange={(e) => editForm.setData('divisi', e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-white rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                                    className={`w-full px-4 py-2.5 bg-white rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                        editForm.errors.divisi ? 'border-red-400' : 'border-surface-border'
+                                    }`}
                                 >
                                     <option value="Tim Logistik">Tim Logistik</option>
                                     <option value="Tim Legal">Tim Legal</option>
                                     <option value="Sekretaris">Sekretaris</option>
+                                    <option value="Superadmin">Superadmin</option>
                                 </select>
+                                {editForm.errors.divisi && <p className="text-xs text-red-500 font-hanken">{editForm.errors.divisi}</p>}
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-hanken font-bold text-gray-900">Jabatan</label>
