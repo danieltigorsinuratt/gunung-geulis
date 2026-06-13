@@ -6,6 +6,7 @@ const tabs = [
     { id: 'profil', label: 'Profil' },
     { id: 'password', label: 'Password' },
     { id: 'notifikasi', label: 'Notifikasi' },
+    { id: 'users', label: 'Kelola User' },
 ];
 
 function ProfileTab({ user }) {
@@ -289,6 +290,251 @@ function NotificationTab() {
     );
 }
 
+const users = [
+    { id: 1, nama: 'Supardi', email: 'supardi@gununggeulis.farm', divisi: 'Tim Logistik', role: 'Head of Logistics', status: 'Active', lastActive: '2 jam lalu' },
+    { id: 2, nama: 'Andi Saputra', email: 'andi@gununggeulis.farm', divisi: 'Tim Logistik', role: 'Staff Logistik', status: 'Active', lastActive: '15 menit lalu' },
+    { id: 3, nama: 'Siti Aminah', email: 'siti@gununggeulis.farm', divisi: 'Tim Legal', role: 'Head of Legal', status: 'Active', lastActive: '1 jam lalu' },
+    { id: 4, nama: 'Rizki Pratama', email: 'rizki@gununggeulis.farm', divisi: 'Tim Legal', role: 'Staff Legal', status: 'Active', lastActive: '3 jam lalu' },
+    { id: 5, nama: 'Dewi Lestari', email: 'dewi@gununggeulis.farm', divisi: 'Sekretaris', role: 'Sekretaris Utama', status: 'Active', lastActive: '30 menit lalu' },
+    { id: 6, nama: 'Budi Santoso', email: 'budi@gununggeulis.farm', divisi: 'Tim Logistik', role: 'Staff Gudang', status: 'Inactive', lastActive: '3 hari lalu' },
+    { id: 7, nama: 'Maya Putri', email: 'maya@gununggeulis.farm', divisi: 'Sekretaris', role: 'Admin Staff', status: 'Active', lastActive: '1 jam lalu' },
+    { id: 8, nama: 'Hendra Wijaya', email: 'hendra@gununggeulis.farm', divisi: 'Tim Legal', role: 'Staff Legal', status: 'Active', lastActive: '5 jam lalu' },
+];
+
+const divisiColors = {
+    'Tim Logistik': 'bg-[#DBEAFE] text-[#1D4ED8]',
+    'Tim Legal': 'bg-[#FEF3C7] text-[#92400E]',
+    'Sekretaris': 'bg-[#D1FAE5] text-[#065F46]',
+};
+
+const statusColors = {
+    Active: 'bg-accent text-primary-700',
+    Inactive: 'bg-gray-100 text-gray-500',
+};
+
+function ManageUserTab() {
+    const [search, setSearch] = useState('');
+    const [filterDivisi, setFilterDivisi] = useState('');
+
+    const filteredUsers = users.filter((user) => {
+        const matchSearch = user.nama.toLowerCase().includes(search.toLowerCase()) ||
+                           user.email.toLowerCase().includes(search.toLowerCase());
+        const matchDivisi = filterDivisi === '' || user.divisi === filterDivisi;
+        return matchSearch && matchDivisi;
+    });
+
+    const stats = {
+        total: users.length,
+        logistik: users.filter(u => u.divisi === 'Tim Logistik').length,
+        legal: users.filter(u => u.divisi === 'Tim Legal').length,
+        sekretaris: users.filter(u => u.divisi === 'Sekretaris').length,
+    };
+
+    return (
+        <div className="flex flex-col gap-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white rounded-xl border border-surface-border p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary-900/10 flex items-center justify-center">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <circle cx="10" cy="7" r="4" stroke="#173901" strokeWidth="1.5"/>
+                                <path d="M3 18C3 14.134 6.13401 11 10 11C13.866 11 17 14.134 17 18" stroke="#173901" strokeWidth="1.5" strokeLinecap="round"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p className="text-xs font-mono text-gray-500 uppercase">Total User</p>
+                            <p className="text-xl font-hanken font-bold text-primary-900">{stats.total}</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white rounded-xl border border-surface-border p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#DBEAFE] flex items-center justify-center">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <rect x="3" y="6" width="14" height="11" rx="2" stroke="#1D4ED8" strokeWidth="1.5"/>
+                                <path d="M7 6V5C7 3.34315 8.34315 2 10 2C11.6569 2 13 3.34315 13 5V6" stroke="#1D4ED8" strokeWidth="1.5"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p className="text-xs font-mono text-gray-500 uppercase">Tim Logistik</p>
+                            <p className="text-xl font-hanken font-bold text-[#1D4ED8]">{stats.logistik}</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white rounded-xl border border-surface-border p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#FEF3C7] flex items-center justify-center">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M10 2L3 6V14L10 18L17 14V6L10 2Z" stroke="#92400E" strokeWidth="1.5" strokeLinejoin="round"/>
+                                <path d="M10 10V18M10 10L3 6M10 10L17 6" stroke="#92400E" strokeWidth="1.5"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p className="text-xs font-mono text-gray-500 uppercase">Tim Legal</p>
+                            <p className="text-xl font-hanken font-bold text-[#92400E]">{stats.legal}</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white rounded-xl border border-surface-border p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#D1FAE5] flex items-center justify-center">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M4 4H16V16H4V4Z" stroke="#065F46" strokeWidth="1.5"/>
+                                <path d="M8 8H12M8 11H12M8 14H10" stroke="#065F46" strokeWidth="1.5" strokeLinecap="round"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p className="text-xs font-mono text-gray-500 uppercase">Sekretaris</p>
+                            <p className="text-xl font-hanken font-bold text-[#065F46]">{stats.sekretaris}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Search & Filter */}
+            <div className="bg-white shadow-sm rounded-xl border border-surface-border p-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2 bg-surface rounded-lg px-4 py-2.5">
+                            <svg className="w-4 h-4 text-gray-400" viewBox="0 0 18 18" fill="none">
+                                <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+                                <path d="M12 12L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                            </svg>
+                            <input
+                                type="text"
+                                placeholder="Cari nama atau email..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full bg-transparent text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none"
+                            />
+                        </div>
+                    </div>
+                    <select
+                        value={filterDivisi}
+                        onChange={(e) => setFilterDivisi(e.target.value)}
+                        className="px-4 py-2.5 bg-surface rounded-lg border-0 text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                    >
+                        <option value="">Semua Divisi</option>
+                        <option value="Tim Logistik">Tim Logistik</option>
+                        <option value="Tim Legal">Tim Legal</option>
+                        <option value="Sekretaris">Sekretaris</option>
+                    </select>
+                </div>
+            </div>
+
+            {/* Users Table */}
+            <div className="bg-white shadow-sm rounded-xl border border-surface-border overflow-hidden">
+                {/* Table Header - Desktop */}
+                <div className="hidden md:block bg-[rgba(200,230,160,0.3)] border-b border-surface-border">
+                    <div className="flex items-center">
+                        <div className="w-16 px-4 py-4 text-center text-xs font-mono font-medium text-primary-900 tracking-wider">
+                            NO
+                        </div>
+                        <div className="flex-1 px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
+                            NAMA & EMAIL
+                        </div>
+                        <div className="w-[180px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
+                            DIVISI
+                        </div>
+                        <div className="w-[160px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
+                            JABATAN
+                        </div>
+                        <div className="w-[100px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
+                            STATUS
+                        </div>
+                        <div className="w-[120px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
+                            AKTIF
+                        </div>
+                    </div>
+                </div>
+
+                {/* Table Body - Desktop */}
+                <div className="hidden md:block divide-y divide-surface-border/30">
+                    {filteredUsers.map((user, index) => (
+                        <div
+                            key={user.id}
+                            className={`flex items-center hover:bg-surface/30 transition-colors ${
+                                index % 2 === 1 ? 'bg-[rgba(200,230,160,0.05)]' : ''
+                            }`}
+                        >
+                            <div className="w-16 px-4 py-4 text-center text-sm font-hanken text-gray-500">
+                                {String(index + 1).padStart(2, '0')}
+                            </div>
+                            <div className="flex-1 px-4 py-4 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary-700 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-white text-sm font-hanken font-bold">
+                                        {user.nama.charAt(0)}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-hanken font-bold text-gray-900">{user.nama}</p>
+                                    <p className="text-xs font-hanken text-gray-500">{user.email}</p>
+                                </div>
+                            </div>
+                            <div className="w-[180px] px-4 py-4">
+                                <span className={`inline-block px-3 py-1 rounded-full text-xs font-hanken font-bold ${divisiColors[user.divisi]}`}>
+                                    {user.divisi}
+                                </span>
+                            </div>
+                            <div className="w-[160px] px-4 py-4 text-sm font-hanken text-gray-900">
+                                {user.role}
+                            </div>
+                            <div className="w-[100px] px-4 py-4">
+                                <span className={`inline-block px-3 py-1 rounded-full text-xs font-hanken font-bold ${statusColors[user.status]}`}>
+                                    {user.status}
+                                </span>
+                            </div>
+                            <div className="w-[120px] px-4 py-4 text-xs font-hanken text-gray-500">
+                                {user.lastActive}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Cards - Mobile */}
+                <div className="md:hidden divide-y divide-surface-border/30">
+                    {filteredUsers.map((user) => (
+                        <div key={user.id} className="p-4 flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-primary-700 flex items-center justify-center flex-shrink-0">
+                                        <span className="text-white text-sm font-hanken font-bold">
+                                            {user.nama.charAt(0)}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-hanken font-bold text-gray-900">{user.nama}</p>
+                                        <p className="text-xs font-hanken text-gray-500">{user.email}</p>
+                                    </div>
+                                </div>
+                                <span className={`px-2 py-1 rounded-full text-[10px] font-hanken font-bold ${statusColors[user.status]}`}>
+                                    {user.status}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 ml-13">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-hanken font-bold ${divisiColors[user.divisi]}`}>
+                                    {user.divisi}
+                                </span>
+                                <span className="text-xs font-hanken text-gray-500">
+                                    {user.role}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Empty State */}
+                {filteredUsers.length === 0 && (
+                    <div className="p-8 text-center">
+                        <p className="text-sm font-hanken text-gray-500">Tidak ada user ditemukan.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function Settings() {
     const { auth } = usePage().props;
     const [activeTab, setActiveTab] = useState('profil');
@@ -329,6 +575,7 @@ export default function Settings() {
                 {activeTab === 'profil' && <ProfileTab user={auth?.user} />}
                 {activeTab === 'password' && <PasswordTab />}
                 {activeTab === 'notifikasi' && <NotificationTab />}
+                {activeTab === 'users' && <ManageUserTab />}
             </div>
         </SidebarLayout>
     );
