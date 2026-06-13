@@ -132,6 +132,25 @@ export default function SidebarLayout({ children }) {
                     })}
                 </nav>
 
+                {/* Help Button */}
+                <div className="px-3 mb-2">
+                    <Link
+                        href="/help"
+                        className={`flex items-center gap-3 px-4 py-3 text-[12px] font-mono font-medium tracking-wider transition-colors ${
+                            currentUrl === '/help'
+                                ? 'bg-primary-700 border-l-4 border-accent-light text-white'
+                                : 'text-white/80 hover:bg-white/5'
+                        }`}
+                    >
+                        <svg className="w-[18px] h-[18px] flex-shrink-0" viewBox="0 0 20 20" fill="none">
+                            <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
+                            <path d="M7.5 7.5C7.5 6.11929 8.61929 5 10 5C11.3807 5 12.5 6.11929 12.5 7.5C12.5 8.88071 11.3807 10 10 10V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                            <circle cx="10" cy="14.5" r="0.75" fill="currentColor"/>
+                        </svg>
+                        Bantuan
+                    </Link>
+                </div>
+
                 {/* User Info */}
                 <div className="px-6 py-5 border-t border-white/10">
                     <div className="flex items-center gap-3">
