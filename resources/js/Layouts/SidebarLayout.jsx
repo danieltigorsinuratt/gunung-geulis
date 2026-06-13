@@ -4,7 +4,7 @@ import { Link, usePage } from '@inertiajs/react';
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: DashboardIcon },
     { name: 'Daftar Dokumen', href: '/documents', icon: DocumentIcon },
-    { name: 'Input Baru', href: '/documents/create', icon: PlusIcon },
+    { name: 'Input Baru', href: '/create', icon: PlusIcon },
     { name: 'Pengaturan', href: '/settings', icon: SettingsIcon },
 ];
 
@@ -80,7 +80,7 @@ export default function SidebarLayout({ children }) {
                 {/* Navigation */}
                 <nav className="flex-1 px-3">
                     {navigation.map((item) => {
-                        const isActive = currentUrl === item.href || (item.href !== '/dashboard' && currentUrl.startsWith(item.href));
+                        const isActive = currentUrl === item.href;
                         return (
                             <Link
                                 key={item.name}
