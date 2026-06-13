@@ -52,31 +52,37 @@ export default function ActivityFeed({ activities }) {
                     <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-surface" />
 
                     <div className="flex flex-col gap-6">
-                        {activities.map((activity) => {
-                            const IconComponent = iconMap[activity.icon] || UploadIcon;
-                            return (
-                                <div key={activity.id} className="relative pl-8">
-                                    {/* Icon dot */}
-                                    <div className={`absolute left-0 top-1 w-6 h-6 rounded-full ${iconBg[activity.color] || iconBg.green} flex items-center justify-center ring-4 ring-white`}>
-                                        <span className={iconColor[activity.color] || iconColor.green}>
-                                            <IconComponent />
-                                        </span>
-                                    </div>
+                        {activities.length === 0 ? (
+                            <div className="text-center text-xs font-hanken text-gray-500 py-4">
+                                Belum ada aktivitas hari ini.
+                            </div>
+                        ) : (
+                            activities.map((activity) => {
+                                const IconComponent = iconMap[activity.icon] || UploadIcon;
+                                return (
+                                    <div key={activity.id} className="relative pl-8">
+                                        {/* Icon dot */}
+                                        <div className={`absolute left-0 top-1 w-6 h-6 rounded-full ${iconBg[activity.color] || iconBg.green} flex items-center justify-center ring-4 ring-white`}>
+                                            <span className={iconColor[activity.color] || iconColor.green}>
+                                                <IconComponent />
+                                            </span>
+                                        </div>
 
-                                    <div className="flex flex-col gap-0.5">
-                                        <div className="text-sm font-hanken font-bold text-primary-900">
-                                            {activity.title}
-                                        </div>
-                                        <div className="text-xs font-hanken text-gray-600">
-                                            {activity.description}
-                                        </div>
-                                        <div className="text-[10px] font-mono text-gray-400">
-                                            {activity.time}
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="text-sm font-hanken font-bold text-primary-900">
+                                                {activity.title}
+                                            </div>
+                                            <div className="text-xs font-hanken text-gray-600">
+                                                {activity.description}
+                                            </div>
+                                            <div className="text-[10px] font-mono text-gray-400">
+                                                {activity.time}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })
+                        )}
                     </div>
                 </div>
             </div>

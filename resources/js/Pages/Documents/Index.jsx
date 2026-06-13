@@ -2,44 +2,7 @@ import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 
-const documents = [
-    {
-        id: 1,
-        tanggal: '12 Okt 2023',
-        nomor: 'GG-SJ-2023-0892',
-        perihal: 'Pengiriman Pakan Ternak BR-1',
-        jenis: 'Surat Jalan',
-        lokasi: 'Sektor A',
-        status: 'Selesai',
-    },
-    {
-        id: 2,
-        tanggal: '13 Okt 2023',
-        nomor: 'INV-PURCH-8821',
-        perihal: 'Tagihan Obat-obatan Vet-C',
-        jenis: 'Invois',
-        lokasi: 'Gudang Logistik',
-        status: 'Pending',
-    },
-    {
-        id: 3,
-        tanggal: '14 Okt 2023',
-        nomor: 'REP-MED-002-X',
-        perihal: 'Laporan Kematian Mendadak Sektor B',
-        jenis: 'Laporan Kesehatan',
-        lokasi: 'Sektor B',
-        status: 'Urgent',
-    },
-    {
-        id: 4,
-        tanggal: '15 Okt 2023',
-        nomor: 'PERM-IZN-331',
-        perihal: 'Perpanjangan Izin Lingkungan RT/RW',
-        jenis: 'Izin Administrasi',
-        lokasi: 'Semua Area',
-        status: 'Proses',
-    },
-];
+
 
 const statusStyles = {
     Selesai: { bg: 'bg-accent', dot: 'bg-primary-700', text: 'text-primary-600' },
@@ -92,7 +55,7 @@ const jenisColors = {
     OPERASIONAL: 'bg-[#F2EDE5]',
 };
 
-export default function DocumentIndex() {
+export default function DocumentIndex({ documents = [] }) {
     const [filters, setFilters] = useState({
         jenis: '',
         status: '',
@@ -248,7 +211,12 @@ export default function DocumentIndex() {
 
                 {/* Table Body */}
                 <div className="divide-y divide-surface-border/30">
-                    {documents.map((doc, index) => (
+                    {documents.length === 0 ? (
+                        <div className="px-6 py-12 text-center text-sm font-hanken text-gray-500 bg-white">
+                            Belum ada dokumen yang diarsipkan.
+                        </div>
+                    ) : (
+                        documents.map((doc, index) => (
                         <div
                             key={doc.id}
                             className={`flex items-center ${
@@ -294,7 +262,7 @@ export default function DocumentIndex() {
                                 </button>
                             </div>
                         </div>
-                    ))}
+                    )))}
                 </div>
 
                 {/* Pagination */}
@@ -334,7 +302,12 @@ export default function DocumentIndex() {
 
             {/* Document Cards - Mobile */}
             <div className="md:hidden flex flex-col gap-3">
-                {documents.map((doc) => (
+                {documents.length === 0 ? (
+                    <div className="bg-white shadow-sm rounded-xl border border-surface-border p-6 text-center text-sm font-hanken text-gray-500">
+                        Belum ada dokumen yang diarsipkan.
+                    </div>
+                ) : (
+                    documents.map((doc) => (
                     <Link
                         key={doc.id}
                         href={`/documents/${doc.id}`}
@@ -358,7 +331,7 @@ export default function DocumentIndex() {
                             </span>
                         </div>
                     </Link>
-                ))}
+                )))}
             </div>
 
             {/* Pagination - Mobile */}

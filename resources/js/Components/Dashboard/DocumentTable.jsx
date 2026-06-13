@@ -52,56 +52,69 @@ export default function DocumentTable({ documents }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {documents.map((doc, index) => (
-                            <tr
-                                key={doc.nomor}
-                                className={`border-b border-surface-border/30 ${
-                                    index % 2 === 1 ? 'bg-surface/5' : ''
-                                } hover:bg-surface/10 transition-colors`}
-                            >
-                                <td className="px-6 py-4 text-sm font-hanken font-medium text-gray-900">
-                                    {doc.nomor}
-                                </td>
-                                <td className="px-6 py-4 text-sm font-hanken text-gray-900">
-                                    {doc.perihal}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-hanken ${jenisColors[doc.jenis] || 'bg-gray-100'}`}>
-                                        {doc.jenis}
-                                    </span>
-                                </td>
-                                <td className={`px-6 py-4 text-sm font-hanken font-bold ${statusColors[doc.status] || 'text-gray-900'}`}>
-                                    {doc.status}
+                        {documents.length === 0 ? (
+                            <tr>
+                                <td colSpan="4" className="px-6 py-12 text-center text-sm font-hanken text-gray-500">
+                                    Belum ada dokumen terbaru.
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            documents.map((doc, index) => (
+                                <tr
+                                    key={doc.nomor}
+                                    className={`border-b border-surface-border/30 ${
+                                        index % 2 === 1 ? 'bg-surface/5' : ''
+                                    } hover:bg-surface/10 transition-colors`}
+                                >
+                                    <td className="px-6 py-4 text-sm font-hanken font-medium text-gray-900">
+                                        {doc.nomor}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-hanken text-gray-900">
+                                        {doc.perihal}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-hanken ${jenisColors[doc.jenis] || 'bg-gray-100'}`}>
+                                            {doc.jenis}
+                                        </span>
+                                    </td>
+                                    <td className={`px-6 py-4 text-sm font-hanken font-bold ${statusColors[doc.status] || 'text-gray-900'}`}>
+                                        {doc.status}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
 
-            {/* Mobile Cards */}
             <div className="md:hidden flex flex-col gap-3">
-                {documents.map((doc) => (
-                    <div
-                        key={doc.nomor}
-                        className="bg-white rounded-xl border border-surface-border p-4 flex flex-col gap-2"
-                    >
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-hanken font-medium text-primary-900">
-                                {doc.nomor}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-hanken font-bold ${statusBg[doc.status]} ${statusColors[doc.status]}`}>
-                                {doc.status}
+                {documents.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-surface-border p-6 text-center text-sm font-hanken text-gray-500">
+                        Belum ada dokumen terbaru.
+                    </div>
+                ) : (
+                    documents.map((doc) => (
+                        <div
+                            key={doc.nomor}
+                            className="bg-white rounded-xl border border-surface-border p-4 flex flex-col gap-2"
+                        >
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-hanken font-medium text-primary-900">
+                                    {doc.nomor}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-hanken font-bold ${statusBg[doc.status]} ${statusColors[doc.status]}`}>
+                                    {doc.status}
+                                </span>
+                            </div>
+                            <p className="text-sm font-hanken font-bold text-gray-900">
+                                {doc.perihal}
+                            </p>
+                            <span className={`inline-block self-start px-2 py-0.5 rounded text-[10px] font-hanken ${jenisColors[doc.jenis] || 'bg-gray-100'}`}>
+                                {doc.jenis}
                             </span>
                         </div>
-                        <p className="text-sm font-hanken font-bold text-gray-900">
-                            {doc.perihal}
-                        </p>
-                        <span className={`inline-block self-start px-2 py-0.5 rounded text-[10px] font-hanken ${jenisColors[doc.jenis] || 'bg-gray-100'}`}>
-                            {doc.jenis}
-                        </span>
-                    </div>
-                ))}
+                    ))
+                )}
             </div>
         </div>
     );

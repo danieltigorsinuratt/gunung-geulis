@@ -31,10 +31,6 @@ Route::get('/settings', function () {
     return Inertia::render('Settings');
 })->middleware(['auth', 'verified'])->name('settings');
 
-Route::get('/help', function () {
-    return Inertia::render('Help');
-})->middleware(['auth', 'verified'])->name('help');
-
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

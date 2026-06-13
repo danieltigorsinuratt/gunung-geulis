@@ -2,48 +2,6 @@ import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 
-const documentData = {
-    id: 1,
-    nomor: 'SITU-2023-08-124',
-    judul: 'Permohonan Izin Prinsip Perluasan Kandang Sektor B',
-    pengirim: 'Dinas Penanaman Modal & Pelayanan Terpadu',
-    tanggalDiterima: '24 Oktober 2023 — 09:15 WIB',
-    kategori: 'Perizinan & Legalitas',
-    prioritas: 'URGENT',
-    deskripsi: 'Dokumen berisi pemberitahuan persetujuan awal atas permohonan perluasan kandang unggas di Sektor B Farm Gunung Geulis. Diperlukan tindak lanjut berupa pemenuhan dokumen lingkungan hidup dalam 14 hari kerja.',
-    file: {
-        nama: 'Lampiran_Izin_Prinsip_B.pdf',
-        ukuran: '2.4 MB',
-    },
-    dokumenTerkait: [
-        { nama: 'Surat Permohonan Awal.pdf' },
-    ],
-    lokasiArsip: 'Rak B-04 / Folder Perizinan',
-    riwayat: [
-        {
-            id: 1,
-            judul: 'Status Berubah: Selesai',
-            deskripsi: 'Oleh: Supardi (General Manager)',
-            waktu: 'Hari ini, 10:30',
-            icon: 'check',
-        },
-        {
-            id: 2,
-            judul: 'Dokumen Diperbarui',
-            deskripsi: 'Penambahan catatan disposisi',
-            waktu: 'Kemarin, 14:20',
-            icon: 'edit',
-        },
-        {
-            id: 3,
-            judul: 'Dokumen Diterima',
-            deskripsi: 'Registrasi sistem oleh Admin 1',
-            waktu: '24 Okt 2023, 09:15',
-            icon: 'inbox',
-        },
-    ],
-};
-
 const prioritasStyles = {
     URGENT: 'bg-[#FFDAD6] text-[#93000A]',
     TINGGI: 'bg-[#FDF2D0] text-[#8B6914]',
@@ -72,8 +30,21 @@ function HistoryIcon({ type }) {
     );
 }
 
-export default function DocumentShow() {
-    const doc = documentData;
+export default function DocumentShow({ document = {} }) {
+    const doc = {
+        nomor: '',
+        judul: '',
+        pengirim: '',
+        tanggalDiterima: '',
+        kategori: '',
+        prioritas: 'NORMAL',
+        deskripsi: '',
+        file: { nama: '', ukuran: '' },
+        dokumenTerkait: [],
+        lokasiArsip: '',
+        riwayat: [],
+        ...document
+    };
     const [zoom, setZoom] = useState(100);
 
     return (
@@ -266,11 +237,13 @@ export default function DocumentShow() {
                                         <path d="M6 6H14M6 10H14M6 14H10" stroke="#173901" strokeWidth="1.5" strokeLinecap="round"/>
                                     </svg>
                                     <span className="text-sm font-hanken font-bold text-gray-900">
-                                        {doc.file.nama}
+                                        {doc.file?.nama || 'Belum diunggah'}
                                     </span>
-                                    <span className="text-xs font-hanken text-gray-500">
-                                        ({doc.file.ukuran})
-                                    </span>
+                                    {doc.file?.ukuran && (
+                                        <span className="text-xs font-hanken text-gray-500">
+                                            ({doc.file.ukuran})
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
@@ -415,10 +388,10 @@ export default function DocumentShow() {
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <span className="text-xs font-mono text-gray-400">
-                                        DOKUMEN TERKAIT ({doc.dokumenTerkait.length})
+                                        DOKUMEN TERKAIT ({doc.dokumenTerkait?.length || 0})
                                     </span>
                                     <span className="text-sm font-hanken font-bold text-gray-900">
-                                        {doc.dokumenTerkait[0].nama}
+                                        {doc.dokumenTerkait?.[0]?.nama || 'Tidak ada'}
                                     </span>
                                 </div>
                             </div>

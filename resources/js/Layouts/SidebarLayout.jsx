@@ -57,21 +57,153 @@ function LogoIcon() {
     );
 }
 
+const helpContents = {
+    '/dashboard': {
+        title: 'Panduan Ringkasan Operasional',
+        sections: [
+            {
+                title: 'Ikhtisar Dashboard',
+                text: 'Halaman ini memberikan ringkasan status persuratan hari ini. Anda dapat memantau jumlah total dokumen, dokumen yang belum dibalas, dan dokumen yang segera kedaluwarsa secara real-time.'
+            },
+            {
+                title: 'Kartu Statistik',
+                text: 'Klik pada kartu statistik untuk memantau detail cepat. Kartu berwarna merah menunjukkan dokumen yang mendekati batas kedaluwarsa dan memerlukan tindakan segera.'
+            },
+            {
+                title: 'Unduh Laporan',
+                text: 'Gunakan tombol "Unduh Laporan" di pojok kanan atas untuk mengekspor statistik performa administrasi farm dalam format PDF/Excel.'
+            }
+        ]
+    },
+    '/documents': {
+        title: 'Panduan Arsip Korespondensi',
+        sections: [
+            {
+                title: 'Pencarian & Penyaringan',
+                text: 'Gunakan panel filter di bagian atas untuk menyaring dokumen berdasarkan Jenis Dokumen, Status, Periode Tanggal, atau Lokasi Sektor Farm. Klik "Terapkan Filter" untuk memperbarui tabel.'
+            },
+            {
+                title: 'Aksi Dokumen',
+                text: 'Di sebelah kanan setiap baris dokumen, terdapat ikon aksi: ikon <strong>Mata</strong> untuk melihat detail, ikon <strong>Pensil</strong> untuk mengedit metadata, dan ikon <strong>Unduh</strong> untuk mengunduh berkas scan dokumen.'
+            },
+            {
+                title: 'Ekspor Laporan',
+                text: 'Tombol "Ekspor Laporan" di bagian atas halaman memungkinkan Anda untuk mengunduh daftar surat yang telah disaring.'
+            }
+        ]
+    },
+    '/create': {
+        title: 'Panduan Input Dokumen Baru',
+        sections: [
+            {
+                title: 'Unggah Berkas Scan',
+                text: 'Seret (drag) atau klik area kotak putus-putus untuk mengunggah dokumen fisik (format PDF, JPG, atau PNG maksimal 10MB). Pastikan hasil scan terbaca dengan jelas.'
+            },
+            {
+                title: 'Informasi Utama',
+                text: 'Isi Nomor Surat sesuai format resmi (contoh: <code>GG-SJ-2023-0892</code>) dan tulis Perihal/Judul sesingkat dan sejelas mungkin agar mudah dicari.'
+            },
+            {
+                title: 'Masa Berlaku (Kedaluwarsa)',
+                text: 'Aktifkan opsi "Atur Masa Berlaku" jika dokumen berupa kontrak kerja sama, izin lingkungan, atau dokumen legal lainnya yang memiliki masa kedaluwarsa agar sistem dapat memberikan pengingat otomatis.'
+            }
+        ]
+    },
+    '/settings': {
+        title: 'Panduan Pengaturan',
+        sections: [
+            {
+                title: 'Konfigurasi Aplikasi',
+                text: 'Halaman ini memungkinkan Anda menyesuaikan preferensi notifikasi email, pengaturan alur disposisi dokumen otomatis, dan manajemen kategori surat jalan.'
+            },
+            {
+                title: 'Simpan Perubahan',
+                text: 'Pastikan klik tombol "Simpan" setelah mengubah konfigurasi agar preferensi sistem Anda diperbarui.'
+            }
+        ]
+    },
+    '/profile': {
+        title: 'Panduan Profil Pengguna',
+        sections: [
+            {
+                title: 'Informasi Akun',
+                text: 'Perbarui nama lengkap, alamat email, atau jabatan Anda di Gunung Geulis Farm.'
+            },
+            {
+                title: 'Keamanan & Sandi',
+                text: 'Ganti kata sandi secara berkala untuk menjaga keamanan akun administrasi Anda. Gunakan kombinasi huruf besar, kecil, angka, dan simbol.'
+            }
+        ]
+    },
+    'default': {
+        title: 'Panduan Umum Sistem',
+        sections: [
+            {
+                title: 'Alur Kerja Korespondensi',
+                text: 'Sistem ini digunakan untuk mencatat dan mendistribusikan surat menyurat di lingkungan Gunung Geulis Farm. Setiap surat masuk/keluar harus didaftarkan melalui menu <strong>Input Baru</strong>.'
+            },
+            {
+                title: 'Navigasi Menu',
+                text: 'Gunakan sidebar sebelah kiri untuk berpindah halaman antara Dashboard, Daftar Dokumen, Input Baru, dan Pengaturan.'
+            },
+            {
+                title: 'Butuh Bantuan?',
+                text: 'Jika Anda menemukan masalah teknis, silakan hubungi Tim IT Support Gunung Geulis Farm melalui ekstensi telepon 102.'
+            }
+        ]
+    }
+};
+
+const getHelpContent = (url) => {
+    if (url === '/dashboard') return helpContents['/dashboard'];
+    if (url === '/documents') return helpContents['/documents'];
+    if (url === '/create') return helpContents['/create'];
+    if (url === '/settings') return helpContents['/settings'];
+    if (url === '/profile') return helpContents['/profile'];
+    if (url.startsWith('/documents/')) {
+        return {
+            title: 'Panduan Detail Dokumen',
+            sections: [
+                {
+                    title: 'Detail Metadata',
+                    text: 'Halaman ini menampilkan seluruh informasi detail dokumen, termasuk riwayat pengunggahan, berkas fisik yang dilampirkan, instansi terkait, dan kepada siapa dokumen didelegasikan.'
+                },
+                {
+                    title: 'Riwayat & Disposisi',
+                    text: 'Di bagian bawah, Anda dapat melihat riwayat aktivitas dokumen (kapan diunggah, siapa yang mengubah status) serta catatan disposisi dari kepala divisi.'
+                },
+                {
+                    title: 'Tindakan Cepat',
+                    text: 'Anda dapat mengunduh berkas fisik, membagikan tautan dokumen, atau mengubah status dokumen secara langsung dari tombol aksi yang tersedia di bagian atas.'
+                }
+            ]
+        };
+    }
+    return helpContents['default'];
+};
+
 export default function SidebarLayout({ children }) {
     const { auth } = usePage().props;
     const user = auth.user;
     const currentUrl = window.location.pathname;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [helpOpen, setHelpOpen] = useState(false);
 
-    // Close sidebar on route change
+    const activeHelp = getHelpContent(currentUrl);
+
+    // Close sidebar and help drawer on route change
     useEffect(() => {
         setSidebarOpen(false);
+        setHelpOpen(false);
     }, [currentUrl]);
 
-    // Close sidebar on escape key
+    // Close sidebar and help drawer on escape key
     useEffect(() => {
         const handleEscape = (e) => {
-            if (e.key === 'Escape') setSidebarOpen(false);
+            if (e.key === 'Escape') {
+                setSidebarOpen(false);
+                setHelpOpen(false);
+            }
         };
         document.addEventListener('keydown', handleEscape);
         return () => document.removeEventListener('keydown', handleEscape);
@@ -132,24 +264,7 @@ export default function SidebarLayout({ children }) {
                     })}
                 </nav>
 
-                {/* Help Button */}
-                <div className="px-3 mb-2">
-                    <Link
-                        href="/help"
-                        className={`flex items-center gap-3 px-4 py-3 text-[12px] font-mono font-medium tracking-wider transition-colors ${
-                            currentUrl === '/help'
-                                ? 'bg-primary-700 border-l-4 border-accent-light text-white'
-                                : 'text-white/80 hover:bg-white/5'
-                        }`}
-                    >
-                        <svg className="w-[18px] h-[18px] flex-shrink-0" viewBox="0 0 20 20" fill="none">
-                            <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
-                            <path d="M7.5 7.5C7.5 6.11929 8.61929 5 10 5C11.3807 5 12.5 6.11929 12.5 7.5C12.5 8.88071 11.3807 10 10 10V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                            <circle cx="10" cy="14.5" r="0.75" fill="currentColor"/>
-                        </svg>
-                        Bantuan
-                    </Link>
-                </div>
+
 
                 {/* User Info */}
                 <div className="px-6 py-5 border-t border-white/10">
@@ -210,7 +325,11 @@ export default function SidebarLayout({ children }) {
                                 <path d="M8 15C8 16.1046 8.89543 17 10 17C11.1046 17 12 16.1046 12 15" stroke="currentColor" strokeWidth="1.5" />
                             </svg>
                         </button>
-                        <button className="p-2 rounded-full hover:bg-surface transition-colors">
+                        <button 
+                            onClick={() => setHelpOpen(true)}
+                            className="p-2 rounded-full hover:bg-surface transition-colors"
+                            title="Panduan Sistem / Bantuan"
+                        >
                             <svg className="w-5 h-5 text-primary-900" viewBox="0 0 20 20" fill="none">
                                 <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
                                 <path d="M7.5 7.5C7.5 6.11929 8.61929 5 10 5C11.3807 5 12.5 6.11929 12.5 7.5C12.5 8.88071 11.3807 10 10 10V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -225,6 +344,83 @@ export default function SidebarLayout({ children }) {
                     {children}
                 </div>
             </main>
+
+            {/* Help Slide-over Drawer */}
+            <div className={`fixed inset-0 z-50 overflow-hidden ${helpOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+                <div className="absolute inset-0 overflow-hidden">
+                    {/* Backdrop */}
+                    <div 
+                        className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${helpOpen ? 'opacity-100' : 'opacity-0'}`} 
+                        onClick={() => setHelpOpen(false)}
+                    />
+                    
+                    {/* Drawer Content */}
+                    <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
+                        <div className={`w-screen max-w-md bg-[#F2F8EA] border-l border-surface-border shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${helpOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                            {/* Header */}
+                            <div className="px-6 py-5 bg-gradient-to-r from-primary-900 to-primary-800 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <svg className="w-5 h-5 text-accent-light" viewBox="0 0 20 20" fill="none">
+                                        <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
+                                        <path d="M7.5 7.5C7.5 6.11929 8.61929 5 10 5C11.3807 5 12.5 6.11929 12.5 7.5C12.5 8.88071 11.3807 10 10 10V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                        <circle cx="10" cy="14.5" r="0.75" fill="currentColor"/>
+                                    </svg>
+                                    <h2 className="text-sm font-mono font-bold text-white uppercase tracking-wider">
+                                        {activeHelp.title}
+                                    </h2>
+                                </div>
+                                <button 
+                                    onClick={() => setHelpOpen(false)}
+                                    className="p-1 rounded text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                                >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            {/* Body */}
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                {activeHelp.sections.map((section, idx) => (
+                                    <div key={idx} className="bg-white rounded-xl border border-surface-border p-4 shadow-sm">
+                                        <h3 className="text-sm font-hanken font-bold text-primary-900 mb-2">
+                                            {idx + 1}. {section.title}
+                                        </h3>
+                                        <p 
+                                            className="text-xs text-gray-600 font-hanken leading-relaxed" 
+                                            dangerouslySetInnerHTML={{ __html: section.text }} 
+                                        />
+                                    </div>
+                                ))}
+                                
+                                <div className="bg-white rounded-xl border border-surface-border p-4 shadow-sm">
+                                    <h3 className="text-sm font-hanken font-bold text-primary-900 mb-2">
+                                        Butuh Bantuan Lebih Lanjut?
+                                    </h3>
+                                    <p className="text-xs text-gray-600 font-hanken mb-3">
+                                        Jika Anda mengalami kendala teknis atau memerlukan hak akses tambahan, silakan hubungi tim Administrator:
+                                    </p>
+                                    <div className="bg-[#FEF9F1] rounded-lg border border-surface-border/50 p-3 flex flex-col gap-1.5 text-xs text-gray-700 font-mono">
+                                        <div>📞 Ext: <span className="font-bold text-primary-900">102 (IT Support)</span></div>
+                                        <div>📧 Email: <span className="font-bold text-primary-900">admin.it@gununggeulis.com</span></div>
+                                        <div>📍 Kantor: <span className="font-bold text-primary-900">Gedung Utama Lt. 2</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Footer */}
+                            <div className="p-4 bg-white border-t border-surface-border flex justify-end">
+                                <button 
+                                    onClick={() => setHelpOpen(false)}
+                                    className="px-4 py-2 bg-primary-700 text-white text-xs font-mono font-medium tracking-wider hover:bg-primary-800 rounded-lg transition-colors"
+                                >
+                                    TUTUP PANDUAN
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
