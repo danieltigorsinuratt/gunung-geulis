@@ -302,20 +302,6 @@ export default function SidebarLayout({ children }) {
                             </svg>
                         </button>
 
-                        {/* Search */}
-                        <div className="flex-1 max-w-[448px]">
-                            <div className="flex items-center gap-2 bg-surface rounded-full px-4 py-2.5">
-                                <svg className="w-[18px] h-[18px] text-gray-400 flex-shrink-0" viewBox="0 0 18 18" fill="none">
-                                    <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-                                    <path d="M12 12L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                </svg>
-                                <input
-                                    type="text"
-                                    placeholder="Cari nomor surat atau perihal..."
-                                    className="w-full bg-transparent text-sm font-hanken text-gray-600 placeholder-gray-400 outline-none"
-                                />
-                            </div>
-                        </div>
                     </div>
 
                     <div className="flex items-center gap-2 md:gap-4">

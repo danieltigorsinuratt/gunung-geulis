@@ -1,6 +1,7 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Head, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, useForm, router, usePage } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import Modal from '@/Components/Modal';
 
 const tabs = [
     { id: 'profil', label: 'Profil' },
@@ -290,17 +291,6 @@ function NotificationTab() {
     );
 }
 
-const users = [
-    { id: 1, nama: 'Supardi', email: 'supardi@gununggeulis.farm', divisi: 'Tim Logistik', role: 'Head of Logistics', status: 'Active', lastActive: '2 jam lalu' },
-    { id: 2, nama: 'Andi Saputra', email: 'andi@gununggeulis.farm', divisi: 'Tim Logistik', role: 'Staff Logistik', status: 'Active', lastActive: '15 menit lalu' },
-    { id: 3, nama: 'Siti Aminah', email: 'siti@gununggeulis.farm', divisi: 'Tim Legal', role: 'Head of Legal', status: 'Active', lastActive: '1 jam lalu' },
-    { id: 4, nama: 'Rizki Pratama', email: 'rizki@gununggeulis.farm', divisi: 'Tim Legal', role: 'Staff Legal', status: 'Active', lastActive: '3 jam lalu' },
-    { id: 5, nama: 'Dewi Lestari', email: 'dewi@gununggeulis.farm', divisi: 'Sekretaris', role: 'Sekretaris Utama', status: 'Active', lastActive: '30 menit lalu' },
-    { id: 6, nama: 'Budi Santoso', email: 'budi@gununggeulis.farm', divisi: 'Tim Logistik', role: 'Staff Gudang', status: 'Inactive', lastActive: '3 hari lalu' },
-    { id: 7, nama: 'Maya Putri', email: 'maya@gununggeulis.farm', divisi: 'Sekretaris', role: 'Admin Staff', status: 'Active', lastActive: '1 jam lalu' },
-    { id: 8, nama: 'Hendra Wijaya', email: 'hendra@gununggeulis.farm', divisi: 'Tim Legal', role: 'Staff Legal', status: 'Active', lastActive: '5 jam lalu' },
-];
-
 const divisiColors = {
     'Tim Logistik': 'bg-[#DBEAFE] text-[#1D4ED8]',
     'Tim Legal': 'bg-[#FEF3C7] text-[#92400E]',
@@ -312,9 +302,53 @@ const statusColors = {
     Inactive: 'bg-gray-100 text-gray-500',
 };
 
-function ManageUserTab() {
+// Helper: hitung durasi login dari timestamp
+function getLoginDuration(timestamp) {
+    if (!timestamp) return '-';
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - timestamp;
+    if (diff < 60) return 'Baru saja';
+    if (diff < 3600) return `${Math.floor(diff / 60)} menit`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} jam`;
+    return `${Math.floor(diff / 86400)} hari`;
+}
+
+function ManageUserTab({ users = [] }) {
     const [search, setSearch] = useState('');
     const [filterDivisi, setFilterDivisi] = useState('');
+
+    // Modals visibility states
+    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+
+    // Inertia form for adding user
+    const addForm = useForm({
+        name: '',
+        email: '',
+        password: '',
+        divisi: 'Tim Logistik',
+        jabatan: '',
+        status: 'Active',
+    });
+
+    // Inertia form for editing user
+    const editForm = useForm({
+        name: '',
+        email: '',
+        password: '',
+        divisi: 'Tim Logistik',
+        jabatan: '',
+        status: 'Active',
+    });
+
+    // Inertia form for deleting user
+    const deleteForm = useForm({});
+
+    // show/hide password state
+    const [showAddPwd, setShowAddPwd] = useState(false);
+    const [showEditPwd, setShowEditPwd] = useState(false);
 
     const filteredUsers = users.filter((user) => {
         const matchSearch = user.nama.toLowerCase().includes(search.toLowerCase()) ||
@@ -394,32 +428,49 @@ function ManageUserTab() {
 
             {/* Search & Filter */}
             <div className="bg-white shadow-sm rounded-xl border border-surface-border p-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 bg-surface rounded-lg px-4 py-2.5">
-                            <svg className="w-4 h-4 text-gray-400" viewBox="0 0 18 18" fill="none">
-                                <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-                                <path d="M12 12L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                            </svg>
-                            <input
-                                type="text"
-                                placeholder="Cari nama atau email..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="w-full bg-transparent text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none"
-                            />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    {/* Left: Shrunk Search & Select */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                        <div className="w-full sm:w-72">
+                            <div className="flex items-center gap-2 bg-surface rounded-lg px-4 py-2.5">
+                                <svg className="w-4 h-4 text-gray-400" viewBox="0 0 18 18" fill="none">
+                                    <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+                                    <path d="M12 12L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                </svg>
+                                <input
+                                    type="text"
+                                    placeholder="Cari nama atau email..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="w-full bg-transparent text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none"
+                                />
+                            </div>
                         </div>
+                        <select
+                            value={filterDivisi}
+                            onChange={(e) => setFilterDivisi(e.target.value)}
+                            className="px-4 py-2.5 bg-surface rounded-lg border-0 text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                        >
+                            <option value="">Semua Divisi</option>
+                            <option value="Tim Logistik">Tim Logistik</option>
+                            <option value="Tim Legal">Tim Legal</option>
+                            <option value="Sekretaris">Sekretaris</option>
+                        </select>
                     </div>
-                    <select
-                        value={filterDivisi}
-                        onChange={(e) => setFilterDivisi(e.target.value)}
-                        className="px-4 py-2.5 bg-surface rounded-lg border-0 text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+
+                    {/* Right: Actions */}
+                    <button 
+                        onClick={() => {
+                            addForm.reset();
+                            setIsAddOpen(true);
+                        }}
+                        className="w-full sm:w-auto px-5 py-2.5 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-sm font-hanken font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
                     >
-                        <option value="">Semua Divisi</option>
-                        <option value="Tim Logistik">Tim Logistik</option>
-                        <option value="Tim Legal">Tim Legal</option>
-                        <option value="Sekretaris">Sekretaris</option>
-                    </select>
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M7 1V13M1 7H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                        Tambah User
+                    </button>
                 </div>
             </div>
 
@@ -428,23 +479,26 @@ function ManageUserTab() {
                 {/* Table Header - Desktop */}
                 <div className="hidden md:block bg-[rgba(200,230,160,0.3)] border-b border-surface-border">
                     <div className="flex items-center">
-                        <div className="w-16 px-4 py-4 text-center text-xs font-mono font-medium text-primary-900 tracking-wider">
+                        <div className="w-12 px-4 py-4 text-center text-xs font-mono font-medium text-primary-900 tracking-wider">
                             NO
                         </div>
                         <div className="flex-1 px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
                             NAMA & EMAIL
                         </div>
-                        <div className="w-[180px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
+                        <div className="w-[140px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
                             DIVISI
                         </div>
-                        <div className="w-[160px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
+                        <div className="w-[140px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
                             JABATAN
                         </div>
-                        <div className="w-[100px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
+                        <div className="w-[120px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
                             STATUS
                         </div>
                         <div className="w-[120px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
-                            AKTIF
+                            LOGIN
+                        </div>
+                        <div className="w-[100px] px-4 py-4 text-center text-xs font-mono font-medium text-primary-900 tracking-wider">
+                            AKSI
                         </div>
                     </div>
                 </div>
@@ -458,7 +512,7 @@ function ManageUserTab() {
                                 index % 2 === 1 ? 'bg-[rgba(200,230,160,0.05)]' : ''
                             }`}
                         >
-                            <div className="w-16 px-4 py-4 text-center text-sm font-hanken text-gray-500">
+                            <div className="w-12 px-4 py-4 text-center text-sm font-hanken text-gray-500">
                                 {String(index + 1).padStart(2, '0')}
                             </div>
                             <div className="flex-1 px-4 py-4 flex items-center gap-3">
@@ -472,21 +526,51 @@ function ManageUserTab() {
                                     <p className="text-xs font-hanken text-gray-500">{user.email}</p>
                                 </div>
                             </div>
-                            <div className="w-[180px] px-4 py-4">
-                                <span className={`inline-block px-3 py-1 rounded-full text-xs font-hanken font-bold ${divisiColors[user.divisi]}`}>
+                            <div className="w-[140px] px-4 py-4">
+                                <span className={`inline-block px-3 py-1 rounded-full text-xs font-hanken font-bold ${divisiColors[user.divisi] || 'bg-gray-100'}`}>
                                     {user.divisi}
                                 </span>
                             </div>
-                            <div className="w-[160px] px-4 py-4 text-sm font-hanken text-gray-900">
+                            <div className="w-[140px] px-4 py-4 text-sm font-hanken text-gray-900">
                                 {user.role}
                             </div>
-                            <div className="w-[100px] px-4 py-4">
-                                <span className={`inline-block px-3 py-1 rounded-full text-xs font-hanken font-bold ${statusColors[user.status]}`}>
-                                    {user.status}
-                                </span>
+                            <div className="w-[120px] px-4 py-4">
+                                <div className="flex items-center gap-1.5">
+                                    <span className={`w-2 h-2 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                                    <span className={`text-xs font-hanken font-bold ${user.isOnline ? 'text-green-600' : 'text-gray-400'}`}>
+                                        {user.isOnline ? 'Online' : 'Offline'}
+                                    </span>
+                                </div>
                             </div>
                             <div className="w-[120px] px-4 py-4 text-xs font-hanken text-gray-500">
-                                {user.lastActive}
+                                {user.isOnline ? getLoginDuration(user.lastLoginAt) : '-'}
+                            </div>
+                            <div className="w-[100px] px-4 py-4 flex items-center justify-center gap-1">
+                                <button 
+                                    onClick={() => {
+                                        setSelectedUser(user);
+                                        editForm.setData({ name: user.nama, email: user.email, divisi: user.divisi, jabatan: user.role, status: user.status });
+                                        setIsEditOpen(true);
+                                    }}
+                                    className="p-1 rounded hover:bg-surface text-[#8B6914] transition-colors" 
+                                    title="Edit User"
+                                >
+                                    <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
+                                        <path d="M12.5 0L14.5 2L5 11.5H3V9.5L12.5 0ZM0 14H17V17H0V14Z" fill="currentColor"/>
+                                    </svg>
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        setSelectedUser(user);
+                                        setIsDeleteOpen(true);
+                                    }}
+                                    className="p-1 rounded hover:bg-surface text-[#BA1A1A] transition-colors" 
+                                    title="Hapus User"
+                                >
+                                    <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+                                        <path d="M3 6H17M8 6V4C8 3.44772 8.44772 3 9 3H11C11.5523 3 12 3.44772 12 4V6M5 6V16C5 17.1046 5.89543 18 7 18H13C14.1046 18 15 17.1046 15 16V6H5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                     ))}
@@ -508,17 +592,51 @@ function ManageUserTab() {
                                         <p className="text-xs font-hanken text-gray-500">{user.email}</p>
                                     </div>
                                 </div>
-                                <span className={`px-2 py-1 rounded-full text-[10px] font-hanken font-bold ${statusColors[user.status]}`}>
-                                    {user.status}
-                                </span>
+                                <div className="flex items-center gap-1">
+                                    <span className={`w-1.5 h-1.5 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                                    <span className={`text-[10px] font-hanken font-bold ${user.isOnline ? 'text-green-600' : 'text-gray-400'}`}>
+                                        {user.isOnline ? 'Online' : 'Offline'}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2 ml-13">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-hanken font-bold ${divisiColors[user.divisi]}`}>
-                                    {user.divisi}
-                                </span>
-                                <span className="text-xs font-hanken text-gray-500">
-                                    {user.role}
-                                </span>
+                            <div className="flex items-center justify-between ml-13">
+                                <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-hanken font-bold ${divisiColors[user.divisi] || 'bg-gray-100'}`}>
+                                        {user.divisi}
+                                    </span>
+                                    <span className="text-xs font-hanken text-gray-500">
+                                        {user.role}
+                                    </span>
+                                    {user.isOnline && (
+                                        <span className="text-[10px] font-hanken text-gray-400">
+                                            · {getLoginDuration(user.lastLoginAt)}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setSelectedUser(user);
+                                            editForm.setData({ name: user.nama, email: user.email, divisi: user.divisi, jabatan: user.role, status: user.status });
+                                            setIsEditOpen(true);
+                                        }}
+                                        className="text-[#8B6914] text-xs font-hanken font-bold hover:underline" 
+                                        title="Edit User"
+                                    >
+                                        Edit
+                                    </button>
+                                    <span className="text-gray-300">|</span>
+                                    <button 
+                                        onClick={() => {
+                                            setSelectedUser(user);
+                                            setIsDeleteOpen(true);
+                                        }}
+                                        className="text-[#BA1A1A] text-xs font-hanken font-bold hover:underline" 
+                                        title="Hapus User"
+                                    >
+                                        Hapus
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -531,13 +649,360 @@ function ManageUserTab() {
                     </div>
                 )}
             </div>
+
+            {/* Modal Tambah User */}
+            <Modal show={isAddOpen} onClose={() => { setIsAddOpen(false); addForm.reset(); }} maxWidth="md">
+                <div className="p-6 bg-[#F8F3EB]">
+                    <h2 className="text-lg font-hanken font-bold text-primary-900 mb-4">
+                        Tambah Pengguna Baru
+                    </h2>
+
+
+                    <div className="flex flex-col gap-4">
+                        {/* Nama */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-hanken font-bold text-gray-900">Nama Lengkap</label>
+                            <input
+                                type="text"
+                                value={addForm.data.name}
+                                onChange={(e) => addForm.setData('name', e.target.value)}
+                                placeholder="Nama lengkap user..."
+                                className={`w-full px-4 py-2.5 bg-white rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                    addForm.errors.name ? 'border-red-400' : 'border-surface-border'
+                                }`}
+                            />
+                            {addForm.errors.name && <p className="text-xs text-red-500 font-hanken">{addForm.errors.name}</p>}
+                        </div>
+
+                        {/* Email */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-hanken font-bold text-gray-900">Email</label>
+                            <input
+                                type="email"
+                                value={addForm.data.email}
+                                onChange={(e) => addForm.setData('email', e.target.value)}
+                                placeholder="email@gununggeulis.farm"
+                                className={`w-full px-4 py-2.5 bg-white rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                    addForm.errors.email ? 'border-red-400' : 'border-surface-border'
+                                }`}
+                            />
+                            {addForm.errors.email && <p className="text-xs text-red-500 font-hanken">{addForm.errors.email}</p>}
+                        </div>
+
+                        {/* Divisi & Jabatan */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-hanken font-bold text-gray-900">Divisi</label>
+                                <select
+                                    value={addForm.data.divisi}
+                                    onChange={(e) => addForm.setData('divisi', e.target.value)}
+                                    className="w-full px-4 py-2.5 bg-white rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                                >
+                                    <option value="Tim Logistik">Tim Logistik</option>
+                                    <option value="Tim Legal">Tim Legal</option>
+                                    <option value="Sekretaris">Sekretaris</option>
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-hanken font-bold text-gray-900">Jabatan</label>
+                                <input
+                                    type="text"
+                                    value={addForm.data.jabatan}
+                                    onChange={(e) => addForm.setData('jabatan', e.target.value)}
+                                    placeholder="Contoh: Staff Logistik"
+                                    className={`w-full px-4 py-2.5 bg-white rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                        addForm.errors.jabatan ? 'border-red-400' : 'border-surface-border'
+                                    }`}
+                                />
+                                {addForm.errors.jabatan && <p className="text-xs text-red-500 font-hanken">{addForm.errors.jabatan}</p>}
+                            </div>
+                        </div>
+
+                        {/* Password */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-hanken font-bold text-gray-900">Password</label>
+                            <div className="relative">
+                                <input
+                                    type={showAddPwd ? 'text' : 'password'}
+                                    value={addForm.data.password}
+                                    onChange={(e) => addForm.setData('password', e.target.value)}
+                                    placeholder="Minimal 8 karakter"
+                                    className={`w-full px-4 py-2.5 pr-11 bg-white rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                        addForm.errors.password ? 'border-red-400' : 'border-surface-border'
+                                    }`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddPwd(!showAddPwd)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    {showAddPwd ? (
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                            <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                            <path d="M1 1l22 22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                            <path d="M10.73 10.73A3 3 0 0013.27 13.27" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                        </svg>
+                                    ) : (
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                            <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="2"/>
+                                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+                                        </svg>
+                                    )}
+                                </button>
+                            </div>
+                            {addForm.errors.password && <p className="text-xs text-red-500 font-hanken">{addForm.errors.password}</p>}
+                        </div>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => { setIsAddOpen(false); addForm.reset(); }}
+                            className="px-4 py-2 text-sm font-hanken font-bold text-gray-600 hover:text-gray-900 transition-colors"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            disabled={addForm.processing}
+                            onClick={() => {
+                                addForm.post(route('users.store'), {
+                                    onSuccess: () => { setIsAddOpen(false); addForm.reset(); },
+                                });
+                            }}
+                            className="px-6 py-2 bg-primary-700 hover:bg-primary-800 disabled:opacity-50 text-white rounded-lg text-sm font-hanken font-bold transition-colors shadow-sm flex items-center gap-2"
+                        >
+                            {addForm.processing && (
+                                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                            )}
+                            Simpan User
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Modal Edit User */}
+            <Modal show={isEditOpen} onClose={() => setIsEditOpen(false)} maxWidth="md">
+                <div className="p-6 bg-[#F8F3EB]">
+                    <h2 className="text-lg font-hanken font-bold text-primary-900 mb-4">
+                        Ubah Informasi Pengguna
+                    </h2>
+
+                    <div className="flex flex-col gap-4">
+                        {/* Nama */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-hanken font-bold text-gray-900">Nama Lengkap</label>
+                            <input
+                                type="text"
+                                value={editForm.data.name}
+                                onChange={(e) => editForm.setData('name', e.target.value)}
+                                className={`w-full px-4 py-2.5 bg-white rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                    editForm.errors.name ? 'border-red-400' : 'border-surface-border'
+                                }`}
+                            />
+                            {editForm.errors.name && <p className="text-xs text-red-500 font-hanken">{editForm.errors.name}</p>}
+                        </div>
+
+                        {/* Email */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-hanken font-bold text-gray-900">Email</label>
+                            <input
+                                type="email"
+                                value={editForm.data.email}
+                                onChange={(e) => editForm.setData('email', e.target.value)}
+                                className={`w-full px-4 py-2.5 bg-white rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                    editForm.errors.email ? 'border-red-400' : 'border-surface-border'
+                                }`}
+                            />
+                            {editForm.errors.email && <p className="text-xs text-red-500 font-hanken">{editForm.errors.email}</p>}
+                        </div>
+
+                        {/* Divisi & Jabatan */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-hanken font-bold text-gray-900">Divisi</label>
+                                <select
+                                    value={editForm.data.divisi}
+                                    onChange={(e) => editForm.setData('divisi', e.target.value)}
+                                    className="w-full px-4 py-2.5 bg-white rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                                >
+                                    <option value="Tim Logistik">Tim Logistik</option>
+                                    <option value="Tim Legal">Tim Legal</option>
+                                    <option value="Sekretaris">Sekretaris</option>
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-hanken font-bold text-gray-900">Jabatan</label>
+                                <input
+                                    type="text"
+                                    value={editForm.data.jabatan}
+                                    onChange={(e) => editForm.setData('jabatan', e.target.value)}
+                                    className={`w-full px-4 py-2.5 bg-white rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                        editForm.errors.jabatan ? 'border-red-400' : 'border-surface-border'
+                                    }`}
+                                />
+                                {editForm.errors.jabatan && <p className="text-xs text-red-500 font-hanken">{editForm.errors.jabatan}</p>}
+                            </div>
+                        </div>
+
+                        {/* Status */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-hanken font-bold text-gray-900">Status</label>
+                            <select
+                                value={editForm.data.status}
+                                onChange={(e) => editForm.setData('status', e.target.value)}
+                                className="w-full px-4 py-2.5 bg-white rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                            >
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+
+                        {/* Password Baru (opsional) */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-hanken font-bold text-gray-900">
+                                Password Baru
+                                <span className="ml-2 text-xs font-normal text-gray-400">(kosongkan jika tidak diubah)</span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type={showEditPwd ? 'text' : 'password'}
+                                    value={editForm.data.password}
+                                    onChange={(e) => editForm.setData('password', e.target.value)}
+                                    placeholder="Minimal 8 karakter"
+                                    className={`w-full px-4 py-2.5 pr-11 bg-white rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                        editForm.errors.password ? 'border-red-400' : 'border-surface-border'
+                                    }`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowEditPwd(!showEditPwd)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    {showEditPwd ? (
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                            <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                            <path d="M1 1l22 22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                            <path d="M10.73 10.73A3 3 0 0013.27 13.27" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                        </svg>
+                                    ) : (
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                            <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="2"/>
+                                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+                                        </svg>
+                                    )}
+                                </button>
+                            </div>
+                            {editForm.errors.password && <p className="text-xs text-red-500 font-hanken">{editForm.errors.password}</p>}
+                        </div>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIsEditOpen(false)}
+                            className="px-4 py-2 text-sm font-hanken font-bold text-gray-600 hover:text-gray-900 transition-colors"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            disabled={editForm.processing}
+                            onClick={() => {
+                                editForm.put(route('users.update', selectedUser.id), {
+                                    onSuccess: () => setIsEditOpen(false),
+                                });
+                            }}
+                            className="px-6 py-2 bg-primary-700 hover:bg-primary-800 disabled:opacity-50 text-white rounded-lg text-sm font-hanken font-bold transition-colors shadow-sm flex items-center gap-2"
+                        >
+                            {editForm.processing && (
+                                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                            )}
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Modal Konfirmasi Hapus User */}
+            <Modal show={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} maxWidth="sm">
+                <div className="p-6 bg-[#F8F3EB]">
+                    <h2 className="text-lg font-hanken font-bold text-[#BA1A1A] mb-2">
+                        Hapus Pengguna
+                    </h2>
+                    <p className="text-sm font-hanken text-gray-600 mb-6">
+                        Apakah Anda yakin ingin menghapus pengguna <strong className="text-gray-900">{selectedUser?.nama}</strong>? Tindakan ini tidak dapat dibatalkan.
+                    </p>
+
+                    <div className="flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIsDeleteOpen(false)}
+                            className="px-4 py-2 text-sm font-hanken font-bold text-gray-600 hover:text-gray-900 transition-colors"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            disabled={deleteForm.processing}
+                            onClick={() => {
+                                deleteForm.delete(route('users.destroy', selectedUser.id), {
+                                    onSuccess: () => setIsDeleteOpen(false),
+                                });
+                            }}
+                            className="px-5 py-2 bg-[#BA1A1A] hover:bg-[#A6141A] disabled:opacity-50 text-white rounded-lg text-sm font-hanken font-bold transition-colors shadow-sm flex items-center gap-2"
+                        >
+                            {deleteForm.processing && (
+                                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                            )}
+                            Hapus User
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
 
-export default function Settings() {
+export default function Settings({ users = [] }) {
     const { auth } = usePage().props;
-    const [activeTab, setActiveTab] = useState('profil');
+
+    // Baca tab dari URL query parameter, default ke 'profil'
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabFromUrl = urlParams.get('tab');
+    const validTabIds = tabs.map(t => t.id);
+    const initialTab = validTabIds.includes(tabFromUrl) ? tabFromUrl : 'profil';
+
+    const [activeTab, setActiveTab] = useState(initialTab);
+    const [isMounted, setIsMounted] = useState(false);
+
+    // Update URL query parameter saat tab berubah (tanpa full reload)
+    useEffect(() => {
+        // Skip render pertama — URL sudah sesuai dari initial state
+        if (!isMounted) {
+            setIsMounted(true);
+            return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        params.set('tab', activeTab);
+        router.get(`/settings?${params.toString()}`, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    }, [activeTab]);
 
     return (
         <SidebarLayout>
@@ -575,7 +1040,7 @@ export default function Settings() {
                 {activeTab === 'profil' && <ProfileTab user={auth?.user} />}
                 {activeTab === 'password' && <PasswordTab />}
                 {activeTab === 'notifikasi' && <NotificationTab />}
-                {activeTab === 'users' && <ManageUserTab />}
+                {activeTab === 'users' && <ManageUserTab users={users} />}
             </div>
         </SidebarLayout>
     );
