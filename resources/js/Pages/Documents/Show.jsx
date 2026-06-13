@@ -1,5 +1,5 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
 const prioritasStyles = {
@@ -30,7 +30,27 @@ function HistoryIcon({ type }) {
     );
 }
 
-export default function DocumentShow({ document = {} }) {
+function FileIcon() {
+    return (
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="2" width="40" height="44" rx="4" stroke="#173901" strokeWidth="2"/>
+            <path d="M14 16H34M14 24H34M14 32H26" stroke="#173901" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+    );
+}
+
+function ExcelIcon() {
+    return (
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="2" width="40" height="44" rx="4" stroke="#173901" strokeWidth="2"/>
+            <path d="M14 14H34V34H14V14Z" stroke="#173901" strokeWidth="2"/>
+            <path d="M14 22H34M14 30H34M22 14V34M30 14V34" stroke="#173901" strokeWidth="1.5"/>
+        </svg>
+    );
+}
+
+export default function DocumentShow({ document = {}, canReply = false, userDivisi = '' }) {
+    const isArchived = document.isArchived || false;
     const doc = {
         nomor: '',
         judul: '',
@@ -39,13 +59,14 @@ export default function DocumentShow({ document = {} }) {
         kategori: '',
         prioritas: 'NORMAL',
         deskripsi: '',
-        file: { nama: '', ukuran: '' },
-        dokumenTerkait: [],
+        file: { nama: '', ukuran: '', url: null },
         lokasiArsip: '',
         riwayat: [],
         ...document
     };
-    const [zoom, setZoom] = useState(100);
+
+    const isPdf = doc.file?.nama?.toLowerCase().endsWith('.pdf');
+    const isExcel = doc.file?.nama?.toLowerCase().match(/\.(xlsx|xls)$/);
 
     return (
         <SidebarLayout>
@@ -67,21 +88,6 @@ export default function DocumentShow({ document = {} }) {
                             Detail Dokumen
                         </h1>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button className="p-2 rounded-full hover:bg-surface transition-colors">
-                            <svg className="w-5 h-5 text-primary-900" viewBox="0 0 20 20" fill="none">
-                                <path d="M15 7C15 4.23858 12.7614 2 10 2C7.23858 2 5 4.23858 5 7V10L3 13H17L15 10V7Z" stroke="currentColor" strokeWidth="1.5" />
-                                <path d="M8 15C8 16.1046 8.89543 17 10 17C11.1046 17 12 16.1046 12 15" stroke="currentColor" strokeWidth="1.5" />
-                            </svg>
-                        </button>
-                        <button className="p-2 rounded-full hover:bg-surface transition-colors">
-                            <svg className="w-5 h-5 text-primary-900" viewBox="0 0 20 20" fill="none">
-                                <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
-                                <path d="M7.5 7.5C7.5 6.11929 8.61929 5 10 5C11.3807 5 12.5 6.11929 12.5 7.5C12.5 8.88071 11.3807 10 10 10V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                <circle cx="10" cy="14.5" r="0.75" fill="currentColor" />
-                            </svg>
-                        </button>
-                    </div>
                 </div>
 
                 {/* Document Header */}
@@ -95,26 +101,62 @@ export default function DocumentShow({ document = {} }) {
                         </h2>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button className="px-5 py-2.5 rounded-lg border border-primary-700 text-primary-700 text-sm font-hanken hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2">
-                            <svg width="15" height="12" viewBox="0 0 15 12" fill="none">
-                                <path d="M1 6H11M11 6L7 2M11 6L7 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            Balas
-                        </button>
-                        <button className="px-5 py-2.5 rounded-lg border border-primary-700 text-primary-700 text-sm font-hanken hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2">
-                            <svg width="17" height="11" viewBox="0 0 17 11" fill="none">
-                                <path d="M1 1H11L14 4V10C14 10.5523 13.5523 11 13 11H1C0.447715 11 0 10.5523 0 10V2C0 1.44772 0.447715 1 1 1Z" stroke="currentColor" strokeWidth="1.5"/>
-                                <path d="M11 1V4H14" stroke="currentColor" strokeWidth="1.5"/>
-                            </svg>
-                            Buat Surat Terkait
-                        </button>
-                        <button className="px-5 py-2.5 rounded-lg bg-[#8B6914] text-white text-sm font-hanken hover:bg-[#7A5C10] transition-colors flex items-center gap-2">
-                            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                                <rect x="1" y="1" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                                <path d="M4 7.5H11M4 4.5H11M4 10.5H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                            </svg>
-                            Arsipkan
-                        </button>
+                        {canReply && (
+                            <>
+                                <button className="px-5 py-2.5 rounded-lg border border-primary-700 text-primary-700 text-sm font-hanken hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2">
+                                    <svg width="15" height="12" viewBox="0 0 15 12" fill="none">
+                                        <path d="M1 6H11M11 6L7 2M11 6L7 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                    Balas
+                                </button>
+                                <button className="px-5 py-2.5 rounded-lg border border-primary-700 text-primary-700 text-sm font-hanken hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2">
+                                    <svg width="17" height="11" viewBox="0 0 17 11" fill="none">
+                                        <path d="M1 1H11L14 4V10C14 10.5523 13.5523 11 13 11H1C0.447715 11 0 10.5523 0 10V2C0 1.44772 0 1.44772 0 1 1Z" stroke="currentColor" strokeWidth="1.5"/>
+                                        <path d="M11 1V4H14" stroke="currentColor" strokeWidth="1.5"/>
+                                    </svg>
+                                    Buat Surat Terkait
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (isArchived) {
+                                            if (confirm('Yakin ingin mengembalikan dokumen ini ke daftar dokumen?')) {
+                                                router.post(`/documents/${doc.id}/restore`, {}, {
+                                                    onSuccess: () => router.visit('/documents-arsip'),
+                                                });
+                                            }
+                                        } else {
+                                            if (confirm('Yakin ingin mengarsipkan dokumen ini?')) {
+                                                router.post(`/documents/${doc.id}/archive`, {}, {
+                                                    onSuccess: () => router.visit('/documents'),
+                                                });
+                                            }
+                                        }
+                                    }}
+                                    className={`px-5 py-2.5 rounded-lg text-white text-sm font-hanken transition-colors flex items-center gap-2 ${
+                                        isArchived
+                                            ? 'bg-primary-700 hover:bg-primary-800'
+                                            : 'bg-[#8B6914] hover:bg-[#7A5C10]'
+                                    }`}
+                                >
+                                    {isArchived ? (
+                                        <>
+                                            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                                                <path d="M13 3L6 14L3 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                            Simpan
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                                                <rect x="1" y="1" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                                                <path d="M4 7.5H11M4 4.5H11M4 10.5H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                            </svg>
+                                            Arsipkan
+                                        </>
+                                    )}
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -159,6 +201,20 @@ export default function DocumentShow({ document = {} }) {
                                     </span>
                                     <span className="text-sm font-hanken text-gray-900">
                                         {doc.kategori}
+                                    </span>
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-xs font-mono font-medium text-gray-400 tracking-wider uppercase">
+                                        STATUS
+                                    </span>
+                                    <span className={`inline-flex self-start px-3 py-1 rounded-full text-xs font-hanken font-bold ${
+                                        doc.status === 'Selesai' ? 'bg-accent text-primary-700' :
+                                        doc.status === 'Pending' ? 'bg-[#FDF2D0] text-[#8B6914]' :
+                                        doc.status === 'Urgent' ? 'bg-[#FFDAD6] text-[#B91C1C]' :
+                                        'bg-[#DBEAFE] text-[#1D4ED8]'
+                                    }`}>
+                                        {doc.status}
                                     </span>
                                 </div>
 
@@ -227,158 +283,102 @@ export default function DocumentShow({ document = {} }) {
 
                     {/* Right Column */}
                     <div className="col-span-2 flex flex-col gap-6">
-                        {/* PDF Viewer */}
+                        {/* File Viewer */}
                         <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
                             {/* File Header */}
                             <div className="flex items-center justify-between px-6 py-4 bg-[#ECE8E0] border-b border-surface-border">
                                 <div className="flex items-center gap-3">
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <rect x="2" y="1" width="16" height="18" rx="2" stroke="#173901" strokeWidth="1.5"/>
-                                        <path d="M6 6H14M6 10H14M6 14H10" stroke="#173901" strokeWidth="1.5" strokeLinecap="round"/>
-                                    </svg>
-                                    <span className="text-sm font-hanken font-bold text-gray-900">
-                                        {doc.file?.nama || 'Belum diunggah'}
-                                    </span>
-                                    {doc.file?.ukuran && (
-                                        <span className="text-xs font-hanken text-gray-500">
-                                            ({doc.file.ukuran})
+                                    {isExcel ? <ExcelIcon /> : <FileIcon />}
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-hanken font-bold text-gray-900">
+                                            {doc.file?.nama || 'Belum diunggah'}
                                         </span>
-                                    )}
+                                        {doc.file?.ukuran && (
+                                            <span className="text-xs font-hanken text-gray-500">
+                                                {doc.file.ukuran}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setZoom(Math.max(50, zoom - 10))}
-                                        className="p-2 rounded-lg hover:bg-surface transition-colors"
+                                {doc.file?.url && (
+                                    <a
+                                        href={doc.file.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-4 py-1.5 bg-primary-900 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2"
                                     >
-                                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                            <circle cx="8" cy="8" r="6" stroke="#1D1C17" strokeWidth="1.5"/>
-                                            <path d="M12.5 12.5L16 16" stroke="#1D1C17" strokeWidth="1.5" strokeLinecap="round"/>
-                                            <path d="M6 8H10" stroke="#1D1C17" strokeWidth="1.5" strokeLinecap="round"/>
-                                        </svg>
-                                    </button>
-                                    <button
-                                        onClick={() => setZoom(Math.min(200, zoom + 10))}
-                                        className="p-2 rounded-lg hover:bg-surface transition-colors"
-                                    >
-                                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                            <circle cx="8" cy="8" r="6" stroke="#1D1C17" strokeWidth="1.5"/>
-                                            <path d="M12.5 12.5L16 16" stroke="#1D1C17" strokeWidth="1.5" strokeLinecap="round"/>
-                                            <path d="M6 8H10M8 6V10" stroke="#1D1C17" strokeWidth="1.5" strokeLinecap="round"/>
-                                        </svg>
-                                    </button>
-                                    <div className="w-px h-6 bg-surface-border mx-1" />
-                                    <button className="px-4 py-1.5 bg-primary-900 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2">
                                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                                             <path d="M6 1V8M6 8L3 5M6 8L9 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                             <path d="M1 9V10C1 10.5523 1.44772 11 2 11H10C10.5523 11 11 10.5523 11 10V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                                         </svg>
                                         Unduh
-                                    </button>
-                                </div>
+                                    </a>
+                                )}
                             </div>
 
-                            {/* Document Preview */}
-                            <div className="bg-[#DED9D2] p-16 flex justify-center overflow-auto" style={{ minHeight: '600px' }}>
-                                <div
-                                    className="bg-white shadow-2xl p-16 flex flex-col gap-8"
-                                    style={{
-                                        width: '700px',
-                                        minHeight: '1000px',
-                                        transform: `scale(${zoom / 100})`,
-                                        transformOrigin: 'top center',
-                                    }}
-                                >
-                                    {/* Letter Header */}
-                                    <div className="flex justify-between pb-4 border-b-2 border-primary-900">
-                                        <div className="w-24 h-24 bg-surface rounded-lg flex items-center justify-center">
-                                            <svg width="44" height="34" viewBox="0 0 44 34" fill="none">
-                                                <rect width="44" height="34" rx="4" fill="#173901"/>
-                                                <rect x="8" y="8" width="28" height="4" rx="1" fill="#B9F38A"/>
-                                                <rect x="8" y="15" width="28" height="4" rx="1" fill="#B9F38A"/>
-                                                <rect x="8" y="22" width="18" height="4" rx="1" fill="#B9F38A"/>
-                                            </svg>
-                                        </div>
-                                        <div className="text-right flex flex-col items-end">
-                                            <p className="text-lg font-hanken font-bold text-primary-900 uppercase">
-                                                PEMERINTAH KABUPATEN BOGOR
+                            {/* File Content */}
+                            <div className="bg-[#DED9D2] flex justify-center items-stretch overflow-auto" style={{ minHeight: '700px' }}>
+                                {doc.file?.url ? (
+                                    isPdf ? (
+                                        // PDF Preview - full inline tanpa sidebar
+                                        <iframe
+                                            src={`${doc.file.url}#toolbar=0&navpanes=0&scrollbar=1&view=fitH`}
+                                            className="w-full bg-white border-0"
+                                            style={{ minHeight: '700px', height: '100%' }}
+                                            title="PDF Preview"
+                                        />
+                                    ) : isExcel ? (
+                                        // Excel - tampilkan info file
+                                        <div className="bg-white rounded-xl p-12 flex flex-col items-center gap-4 text-center">
+                                            <ExcelIcon />
+                                            <p className="text-lg font-hanken font-bold text-primary-900">
+                                                {doc.file.nama}
                                             </p>
-                                            <p className="text-xs font-hanken text-gray-900">
-                                                Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu
+                                            <p className="text-sm font-hanken text-gray-500">
+                                                File Excel tidak dapat ditampilkan langsung di browser.
                                             </p>
-                                            <p className="text-[10px] font-hanken text-gray-400">
-                                                Jl. Tegar Beriman No. 1, Cibinong, Jawa Barat
+                                            <p className="text-xs font-hanken text-gray-400">
+                                                Ukuran: {doc.file.ukuran}
                                             </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Letter Title */}
-                                    <div className="text-center">
-                                        <h3 className="text-xl font-hanken font-bold text-gray-900 underline">
-                                            SURAT KEPUTUSAN IZIN PRINSIP
-                                        </h3>
-                                        <p className="text-sm font-hanken text-gray-900 mt-1">
-                                            Nomor: 503/1284-DPMPTSP/X/2023
-                                        </p>
-                                    </div>
-
-                                    {/* Letter Content */}
-                                    <div className="text-sm font-hanken text-gray-900 leading-7 flex flex-col gap-4">
-                                        <p>
-                                            Berdasarkan permohonan Saudara tertanggal 15 September 2023 perihal permohonan izin prinsip perluasan usaha peternakan unggas di wilayah Sektor B Farm Gunung Geulis, dengan ini disampaikan beberapa hal sebagai berikut:
-                                        </p>
-                                        <div className="pl-5 flex flex-col gap-3">
-                                            <p>
-                                                Secara prinsip, pemerintah daerah memberikan persetujuan awal atas rencana perluasan area kandang sebesar 5.000 m2.
-                                            </p>
-                                            <p>
-                                                Saudara diwajibkan untuk segera mengurus dokumen Analisis Mengenai Dampak Lingkungan (AMDAL) atau UKL-UPL dalam kurun waktu paling lama 14 (empat belas) hari kerja.
-                                            </p>
-                                            <p>
-                                                Menjaga koordinasi dengan masyarakat sekitar lokasi pembangunan kandang baru guna menghindari konflik sosial.
-                                            </p>
-                                        </div>
-                                        <p>
-                                            Demikian surat ini disampaikan untuk menjadi perhatian dan dapat dipergunakan sebagaimana mestinya.
-                                        </p>
-                                    </div>
-
-                                    {/* Signature */}
-                                    <div className="flex justify-end mt-8">
-                                        <div className="text-center">
-                                            <p className="text-sm font-hanken text-gray-900">
-                                                Bogor, 24 Oktober 2023
-                                            </p>
-                                            <p className="text-sm font-hanken font-bold text-gray-900 mt-2">
-                                                Kepala Dinas,
-                                            </p>
-                                            <div className="w-32 h-34 bg-surface rounded mt-2 border border-gray-400 flex items-center justify-center">
-                                                <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-                                                    <circle cx="15" cy="15" r="14" stroke="#73796C" strokeWidth="1"/>
-                                                    <path d="M10 15L13 18L20 11" stroke="#73796C" strokeWidth="1.5"/>
+                                            <a
+                                                href={doc.file.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="mt-4 px-6 py-2.5 bg-primary-700 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2"
+                                            >
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                                    <path d="M6 1V8M6 8L3 5M6 8L9 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    <path d="M1 9V10C1 10.5523 1.44772 11 2 11H10C10.5523 11 11 10.5523 11 10V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                                                 </svg>
-                                            </div>
-                                            <p className="text-sm font-hanken font-bold text-gray-900 underline mt-2">
-                                                Dr. Ir. Hermawan Syah, M.Si
+                                                Buka & Unduh File
+                                            </a>
+                                        </div>
+                                    ) : (
+                                        // Unknown file type
+                                        <div className="bg-white rounded-xl p-12 flex flex-col items-center gap-4 text-center">
+                                            <FileIcon />
+                                            <p className="text-lg font-hanken font-bold text-primary-900">
+                                                {doc.file.nama}
                                             </p>
-                                            <p className="text-xs font-hanken text-gray-900">
-                                                NIP. 19720315 199703 1 002
+                                            <p className="text-sm font-hanken text-gray-500">
+                                                Format file tidak dapat ditampilkan.
                                             </p>
                                         </div>
+                                    )
+                                ) : (
+                                    <div className="bg-white rounded-xl p-12 flex flex-col items-center gap-4 text-center">
+                                        <FileIcon />
+                                        <p className="text-sm font-hanken text-gray-500">
+                                            Belum ada file yang diunggah.
+                                        </p>
                                     </div>
-
-                                    {/* Watermark */}
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none overflow-hidden">
-                                        <div className="text-[120px] font-hanken font-bold text-gray-900 -rotate-45 leading-none">
-                                            GUNUNG GEULIS FARM
-                                        </div>
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </div>
 
                         {/* Bottom Info */}
                         <div className="grid grid-cols-2 gap-6">
-                            {/* Dokumen Terkait */}
+                            {/* Divisi Tujuan */}
                             <div className="bg-white rounded-xl border border-surface-border p-6 flex items-center gap-4">
                                 <div className="w-12 h-12 bg-table-header rounded-lg flex items-center justify-center flex-shrink-0">
                                     <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
@@ -388,10 +388,10 @@ export default function DocumentShow({ document = {} }) {
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <span className="text-xs font-mono text-gray-400">
-                                        DOKUMEN TERKAIT ({doc.dokumenTerkait?.length || 0})
+                                        DITUGASKAN KE
                                     </span>
                                     <span className="text-sm font-hanken font-bold text-gray-900">
-                                        {doc.dokumenTerkait?.[0]?.nama || 'Tidak ada'}
+                                        {doc.lokasiArsip || '-'}
                                     </span>
                                 </div>
                             </div>
@@ -407,10 +407,10 @@ export default function DocumentShow({ document = {} }) {
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <span className="text-xs font-mono text-gray-400">
-                                        LOKASI ARSIP
+                                        DIBUAT OLEH
                                     </span>
                                     <span className="text-sm font-hanken font-bold text-gray-900">
-                                        {doc.lokasiArsip}
+                                        {doc.createdBy || '-'}
                                     </span>
                                 </div>
                             </div>

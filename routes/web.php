@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
@@ -17,17 +18,47 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/documents', function () {
-    return Inertia::render('Documents/Index');
-})->middleware(['auth', 'verified'])->name('documents.index');
+Route::get('/documents', [DocumentController::class, 'index'])
+    ->middleware(['auth', 'verified'])->name('documents.index');
 
-Route::get('/documents/{id}', function () {
-    return Inertia::render('Documents/Show');
-})->middleware(['auth', 'verified'])->name('documents.show');
+Route::get('/documents/{id}', [DocumentController::class, 'show'])
+    ->middleware(['auth', 'verified'])->name('documents.show');
 
-Route::get('/create', function () {
-    return Inertia::render('Documents/Create');
-})->middleware(['auth', 'verified'])->name('documents.create');
+Route::get('/create', [DocumentController::class, 'create'])
+    ->middleware(['auth', 'verified'])->name('documents.create');
+
+Route::post('/create', [DocumentController::class, 'store'])
+    ->middleware(['auth', 'verified'])->name('documents.store');
+
+Route::post('/documents/{id}/archive', [DocumentController::class, 'archive'])
+    ->middleware(['auth', 'verified'])->name('documents.archive');
+
+Route::post('/documents/{id}/restore', [DocumentController::class, 'restore'])
+    ->middleware(['auth', 'verified'])->name('documents.restore');
+
+Route::delete('/documents/{id}', [DocumentController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])->name('documents.destroy');
+
+Route::get('/documents-arsip', [DocumentController::class, 'archived'])
+    ->middleware(['auth', 'verified'])->name('documents.archived');
+
+Route::get('/documents-export', [DocumentController::class, 'export'])
+    ->middleware(['auth', 'verified'])->name('documents.export');
+
+// Serve uploaded files (fallback untuk Windows symlink)
+Route::get('/files/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    if (!file_exists($fullPath)) {
+        abort(404);
+    }
+    $mime = mime_content_type($fullPath);
+    $size = filesize($fullPath);
+    header('Content-Type: ' . $mime);
+    header('Content-Length: ' . $size);
+    header('Content-Disposition: inline; filename="' . basename($path) . '"');
+    readfile($fullPath);
+    exit;
+})->where('path', '.*');
 
 Route::get('/settings', function () {
     $users = User::orderBy('created_at', 'desc')->get()->map(function ($user) {

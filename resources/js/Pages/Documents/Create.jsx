@@ -1,32 +1,74 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { useState, useRef } from 'react';
 
-export default function DocumentCreate() {
-    const [form, setForm] = useState({
-        nomor: '',
+const ALLOWED_TYPES = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+];
+const ALLOWED_EXTENSIONS = ['.pdf', '.xlsx', '.xls'];
+const MAX_SIZE_MB = 15;
+
+export default function DocumentCreate({ usersByDivisi = {} }) {
+    const { data, setData, post, processing, errors } = useForm({
+        nomor_surat: '',
         perihal: '',
         jenis: '',
         instansi: '',
-        pengirim: '',
-        ditugaskanKe: '',
+        jenis_lainnya: '',
+        penerima: '',
+        ditugaskan_ke: '',
         catatan: '',
-        tanggalDokumen: '',
-        batasWaktu: '',
-        masaBerlaku: false,
+        tanggal_dokumen: '',
+        batas_waktu: '',
+        masa_berlaku: false,
+        file: null,
     });
 
     const [file, setFile] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [fileError, setFileError] = useState('');
     const fileInputRef = useRef(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm({ ...form, [name]: value });
+        setData(name, value);
+        // Reset penerima saat divisi berubah
+        if (name === 'ditugaskan_ke') {
+            setData('penerima', '');
+        }
     };
 
     const handleToggle = () => {
-        setForm({ ...form, masaBerlaku: !form.masaBerlaku });
+        setData('masa_berlaku', !data.masa_berlaku);
+    };
+
+    // Validasi file: PDF/Excel, max 15MB
+    const validateFile = (f) => {
+        if (!f) return false;
+
+        // Cek ekstensi
+        const ext = '.' + f.name.split('.').pop().toLowerCase();
+        if (!ALLOWED_EXTENSIONS.includes(ext)) {
+            setFileError('Format file tidak didukung. Hanya PDF, XLSX, atau XLS.');
+            return false;
+        }
+
+        // Cek MIME type
+        if (!ALLOWED_TYPES.includes(f.type)) {
+            setFileError('Format file tidak didukung. Hanya PDF, XLSX, atau XLS.');
+            return false;
+        }
+
+        // Cek ukuran (max 15MB)
+        if (f.size > MAX_SIZE_MB * 1024 * 1024) {
+            setFileError(`Ukuran file melebihi ${MAX_SIZE_MB}MB.`);
+            return false;
+        }
+
+        setFileError('');
+        return true;
     };
 
     const handleDragOver = (e) => {
@@ -42,34 +84,46 @@ export default function DocumentCreate() {
         e.preventDefault();
         setIsDragging(false);
         const droppedFile = e.dataTransfer.files[0];
-        if (droppedFile) {
+        if (droppedFile && validateFile(droppedFile)) {
             setFile(droppedFile);
+            setData('file', droppedFile);
         }
     };
 
     const handleFileSelect = (e) => {
         const selectedFile = e.target.files[0];
-        if (selectedFile) {
+        if (selectedFile && validateFile(selectedFile)) {
             setFile(selectedFile);
+            setData('file', selectedFile);
+        }
+    };
+
+    const handleRemoveFile = (e) => {
+        e.stopPropagation();
+        setFile(null);
+        setData('file', null);
+        setFileError('');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Hardcoded for prototype
-        console.log('Form submitted:', form, file);
-        alert('Dokumen berhasil disimpan! (Prototype)');
+        post(route('documents.store'), {
+            forceFormData: true,
+        });
     };
 
     return (
         <SidebarLayout>
-            <Head title="Input Baru" />
+            <Head title="Input Dokumen" />
 
             <div className="max-w-[1024px] mx-auto">
                 {/* Header */}
                 <div className="mb-6 md:mb-8">
                     <h1 className="text-xl md:text-2xl font-hanken font-semibold text-primary-900 leading-8">
-                        Input Dokumen Baru
+                        Input Dokumen
                     </h1>
                     <p className="text-sm font-hanken text-gray-600 mt-1">
                         Silakan lengkapi formulir di bawah untuk mendaftarkan korespondensi atau dokumen baru ke dalam sistem.
@@ -99,7 +153,7 @@ export default function DocumentCreate() {
                                     ref={fileInputRef}
                                     type="file"
                                     className="hidden"
-                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    accept=".pdf,.xlsx,.xls"
                                     onChange={handleFileSelect}
                                 />
                                 {file ? (
@@ -114,10 +168,7 @@ export default function DocumentCreate() {
                                         <button
                                             type="button"
                                             className="mt-2 text-xs font-hanken text-red-500 hover:underline"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setFile(null);
-                                            }}
+                                            onClick={handleRemoveFile}
                                         >
                                             Hapus file
                                         </button>
@@ -132,11 +183,19 @@ export default function DocumentCreate() {
                                             Klik atau Seret File
                                         </p>
                                         <p className="text-xs md:text-sm font-hanken text-gray-600 mt-1 md:mt-2">
-                                            Format PDF, JPG, atau PNG (Maks. 10MB)
+                                            Format PDF, XLSX, atau XLS (Maks. 15MB)
                                         </p>
                                     </>
                                 )}
                             </div>
+                            {/* Error: file client-side */}
+                            {fileError && (
+                                <p className="mt-2 text-xs text-red-500 font-hanken">{fileError}</p>
+                            )}
+                            {/* Error: file server-side */}
+                            {errors.file && (
+                                <p className="mt-2 text-xs text-red-500 font-hanken">{errors.file}</p>
+                            )}
                         </div>
 
                         {/* Informasi Utama */}
@@ -152,12 +211,15 @@ export default function DocumentCreate() {
                                     </label>
                                     <input
                                         type="text"
-                                        name="nomor"
-                                        value={form.nomor}
+                                        name="nomor_surat"
+                                        value={data.nomor_surat}
                                         onChange={handleChange}
                                         placeholder="Contoh: 001/GGF/ADM/2023"
-                                        className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700"
+                                        className={`w-full px-4 py-2.5 bg-surface rounded-lg border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                            errors.nomor_surat ? 'border-red-400' : 'border-surface-border'
+                                        }`}
                                     />
+                                    {errors.nomor_surat && <p className="text-xs text-red-500 font-hanken">{errors.nomor_surat}</p>}
                                 </div>
 
                                 {/* Perihal */}
@@ -168,11 +230,14 @@ export default function DocumentCreate() {
                                     <input
                                         type="text"
                                         name="perihal"
-                                        value={form.perihal}
+                                        value={data.perihal}
                                         onChange={handleChange}
                                         placeholder="Ringkasan isi dokumen..."
-                                        className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700"
+                                        className={`w-full px-4 py-2.5 bg-surface rounded-lg border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                            errors.perihal ? 'border-red-400' : 'border-surface-border'
+                                        }`}
                                     />
+                                    {errors.perihal && <p className="text-xs text-red-500 font-hanken">{errors.perihal}</p>}
                                 </div>
 
                                 {/* Jenis & Instansi */}
@@ -183,7 +248,7 @@ export default function DocumentCreate() {
                                         </label>
                                         <select
                                             name="jenis"
-                                            value={form.jenis}
+                                            value={data.jenis}
                                             onChange={handleChange}
                                             className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
                                         >
@@ -194,7 +259,18 @@ export default function DocumentCreate() {
                                             <option value="izin">Izin</option>
                                             <option value="memo">Memo</option>
                                             <option value="kontrak">Kontrak</option>
+                                            <option value="lainnya">Lainnya</option>
                                         </select>
+                                        {data.jenis === 'lainnya' && (
+                                            <input
+                                                type="text"
+                                                name="jenis_lainnya"
+                                                value={data.jenis_lainnya || ''}
+                                                onChange={handleChange}
+                                                placeholder="Tulis jenis dokumen..."
+                                                className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700 mt-2"
+                                            />
+                                        )}
                                     </div>
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-sm font-hanken font-bold text-gray-900">
@@ -203,7 +279,7 @@ export default function DocumentCreate() {
                                         <input
                                             type="text"
                                             name="instansi"
-                                            value={form.instansi}
+                                            value={data.instansi}
                                             onChange={handleChange}
                                             placeholder="Nama organisasi/instansi"
                                             className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700"
@@ -217,40 +293,55 @@ export default function DocumentCreate() {
                     {/* Bottom Section: Pengirim + Tanggal */}
                     <div className="bg-white shadow-sm rounded-xl border border-surface-border p-4 md:p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                            {/* Pengirim & Penugasan */}
+                            {/* Penerima & Penugasan */}
                             <div>
                                 <label className="block text-xs font-mono font-medium text-gray-600 tracking-wider uppercase mb-4">
-                                    PENGIRIM & PENUGASAN
+                                    PENERIMA & PENUGASAN
                                 </label>
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-sm font-hanken font-bold text-gray-900">
-                                            Pengirim / Penerima
+                                            Penerima <span className="text-red-500">*</span>
                                         </label>
-                                        <input
-                                            type="text"
-                                            name="pengirim"
-                                            value={form.pengirim}
+                                        <select
+                                            name="penerima"
+                                            value={data.penerima}
                                             onChange={handleChange}
-                                            placeholder="Nama individu"
-                                            className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700"
-                                        />
+                                            disabled={!data.ditugaskan_ke}
+                                            className={`w-full px-4 py-2.5 bg-surface rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                                !data.ditugaskan_ke ? 'opacity-50 cursor-not-allowed' : ''
+                                            } ${errors.penerima ? 'border-red-400' : 'border-surface-border'}`}
+                                        >
+                                            <option value="">
+                                                {data.ditugaskan_ke ? 'Pilih Penerima' : 'Pilih Divisi Terlebih Dahulu'}
+                                            </option>
+                                            {(usersByDivisi[data.ditugaskan_ke] || []).map((user) => (
+                                                <option key={user.id} value={user.name}>
+                                                    {user.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.penerima && <p className="text-xs text-red-500 font-hanken">{errors.penerima}</p>}
                                     </div>
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-sm font-hanken font-bold text-gray-900">
-                                            Ditugaskan Ke
+                                            Ditugaskan Ke <span className="text-red-500">*</span>
                                         </label>
                                         <select
-                                            name="ditugaskanKe"
-                                            value={form.ditugaskanKe}
+                                            name="ditugaskan_ke"
+                                            value={data.ditugaskan_ke}
                                             onChange={handleChange}
-                                            className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                                            className={`w-full px-4 py-2.5 bg-surface rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                                errors.ditugaskan_ke ? 'border-red-400' : 'border-surface-border'
+                                            }`}
                                         >
                                             <option value="">Pilih Divisi</option>
-                                            <option value="tim-logistik">Tim Logistik</option>
-                                            <option value="tim-legal">Tim Legal</option>
-                                            <option value="sekretaris">Sekretaris</option>
+                                            <option value="Tim Logistik">Tim Logistik</option>
+                                            <option value="Tim Legal">Tim Legal</option>
+                                            <option value="Sekretaris">Sekretaris</option>
+                                            <option value="Superadmin">Superadmin</option>
                                         </select>
+                                        {errors.ditugaskan_ke && <p className="text-xs text-red-500 font-hanken">{errors.ditugaskan_ke}</p>}
                                     </div>
                                     <div className="flex flex-col gap-1.5">
                                         <label className="text-sm font-hanken font-bold text-gray-900">
@@ -258,7 +349,7 @@ export default function DocumentCreate() {
                                         </label>
                                         <textarea
                                             name="catatan"
-                                            value={form.catatan}
+                                            value={data.catatan}
                                             onChange={handleChange}
                                             placeholder="Keterangan tambahan jika diperlukan..."
                                             rows={4}
@@ -281,8 +372,8 @@ export default function DocumentCreate() {
                                             </label>
                                             <input
                                                 type="date"
-                                                name="tanggalDokumen"
-                                                value={form.tanggalDokumen}
+                                                name="tanggal_dokumen"
+                                                value={data.tanggal_dokumen}
                                                 onChange={handleChange}
                                                 className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
                                             />
@@ -290,14 +381,18 @@ export default function DocumentCreate() {
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-sm font-hanken font-bold text-gray-900">
                                                 Batas Waktu (Deadline)
+                                                {data.masa_berlaku && <span className="text-red-500 ml-1">*</span>}
                                             </label>
                                             <input
-                                                type="date"
-                                                name="batasWaktu"
-                                                value={form.batasWaktu}
+                                                type="datetime-local"
+                                                name="batas_waktu"
+                                                value={data.batas_waktu}
                                                 onChange={handleChange}
-                                                className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                                                className={`w-full px-4 py-2.5 bg-surface rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                                    errors.batas_waktu ? 'border-red-400' : 'border-surface-border'
+                                                }`}
                                             />
+                                            {errors.batas_waktu && <p className="text-xs text-red-500 font-hanken">{errors.batas_waktu}</p>}
                                         </div>
                                     </div>
 
@@ -316,12 +411,12 @@ export default function DocumentCreate() {
                                                 type="button"
                                                 onClick={handleToggle}
                                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                    form.masaBerlaku ? 'bg-primary-700' : 'bg-surface-border'
+                                                    data.masa_berlaku ? 'bg-primary-700' : 'bg-surface-border'
                                                 }`}
                                             >
                                                 <span
                                                     className={`inline-block h-5 w-5 transform rounded-full bg-white border border-gray-300 transition-transform ${
-                                                        form.masaBerlaku ? 'translate-x-5' : 'translate-x-0.5'
+                                                        data.masa_berlaku ? 'translate-x-5' : 'translate-x-0.5'
                                                     }`}
                                                 />
                                             </button>
@@ -342,12 +437,15 @@ export default function DocumentCreate() {
                         </Link>
                         <button
                             type="submit"
-                            className="w-full sm:w-auto px-8 py-3 rounded-lg bg-primary-700 shadow-md text-white text-sm md:text-base font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center justify-center gap-2"
+                            disabled={processing}
+                            className="w-full sm:w-auto px-8 py-3 rounded-lg bg-primary-700 shadow-md text-white text-sm md:text-base font-hanken font-bold hover:bg-primary-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                         >
-                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                <path d="M14 6L7 13L4 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                <rect x="1" y="1" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2"/>
-                            </svg>
+                            {processing && (
+                                <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                            )}
                             Simpan Dokumen
                         </button>
                     </div>

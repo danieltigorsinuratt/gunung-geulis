@@ -1,5 +1,5 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
 
@@ -47,6 +47,14 @@ function DownloadIcon() {
     );
 }
 
+function TrashIcon() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 16 18" fill="none">
+            <path d="M1 4H15M5.5 4V2.5C5.5 1.94772 5.94772 1.5 6.5 1.5H9.5C10.0523 1.5 10.5 1.94772 10.5 2.5V4M6.5 7V13M9.5 7V13M2.5 4L3.5 15.5C3.5 16.0523 3.94772 16.5 4.5 16.5H11.5C12.0523 16.5 12.5 16.0523 12.5 15.5L13.5 4" stroke="#BA1A1A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    );
+}
+
 const jenisColors = {
     EKSTERNAL: 'bg-[#F2EDE5]',
     LEGAL: 'bg-[#F2EDE5]',
@@ -55,7 +63,7 @@ const jenisColors = {
     OPERASIONAL: 'bg-[#F2EDE5]',
 };
 
-export default function DocumentIndex({ documents = [] }) {
+export default function DocumentIndex({ documents = [], isSuperAdmin = false, userDivisi = '' }) {
     const [filters, setFilters] = useState({
         jenis: '',
         status: '',
@@ -78,26 +86,32 @@ export default function DocumentIndex({ documents = [] }) {
                     </p>
                 </div>
                 <div className="flex items-center gap-2 md:gap-3">
-                    <button className="px-3 md:px-4 py-2 rounded-lg border-2 border-primary-700 text-primary-700 text-xs md:text-sm font-hanken font-bold hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2">
+                    <a
+                        href={route('documents.export')}
+                        className="px-3 md:px-4 py-2 rounded-lg border-2 border-primary-700 text-primary-700 text-xs md:text-sm font-hanken font-bold hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2"
+                    >
                         <svg width="12" height="16" viewBox="0 0 12 16" fill="none">
                             <path d="M1 1V11H11V1" stroke="currentColor" strokeWidth="1.5"/>
                             <path d="M6 1V11" stroke="currentColor" strokeWidth="1.5"/>
                             <path d="M3 5L6 2L9 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                         Ekspor Laporan
-                    </button>
-                    <button className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg bg-primary-700 shadow-sm text-white text-xs md:text-sm font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2">
+                    </a>
+                    <Link
+                        href="/create"
+                        className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg bg-primary-700 shadow-sm text-white text-xs md:text-sm font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2"
+                    >
                         <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
                             <path d="M5.5 0V11M0 5.5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                         Tambah Dokumen
-                    </button>
+                    </Link>
                 </div>
             </div>
 
-            {/* Filter Section */}
+            {/* Filter Section - Semua User */}
             <div className="bg-surface shadow-sm rounded-xl border border-surface-border p-4 md:p-6 mb-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 ${isSuperAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 mb-4`}>
                     {/* Jenis Dokumen */}
                     <div className="flex flex-col gap-2">
                         <label className="text-xs font-mono font-medium text-gray-600 tracking-wider uppercase">
@@ -113,6 +127,8 @@ export default function DocumentIndex({ documents = [] }) {
                             <option value="invois">Invois</option>
                             <option value="laporan">Laporan</option>
                             <option value="izin">Izin</option>
+                            <option value="memo">Memo</option>
+                            <option value="kontrak">Kontrak</option>
                         </select>
                     </div>
 
@@ -127,10 +143,10 @@ export default function DocumentIndex({ documents = [] }) {
                             className="w-full px-3 py-2 bg-white rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
                         >
                             <option value="">Semua Status</option>
-                            <option value="selesai">Selesai</option>
-                            <option value="pending">Pending</option>
-                            <option value="urgent">Urgent</option>
-                            <option value="proses">Proses</option>
+                            <option value="Selesai">Selesai</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="Proses">Proses</option>
                         </select>
                     </div>
 
@@ -147,7 +163,8 @@ export default function DocumentIndex({ documents = [] }) {
                         />
                     </div>
 
-                    {/* Lokasi Farm */}
+                    {/* Lokasi Farm - Hanya Superadmin */}
+                    {isSuperAdmin && (
                     <div className="flex flex-col gap-2">
                         <label className="text-xs font-mono font-medium text-gray-600 tracking-wider uppercase">
                             LOKASI FARM
@@ -157,24 +174,37 @@ export default function DocumentIndex({ documents = [] }) {
                             onChange={(e) => setFilters({ ...filters, lokasi: e.target.value })}
                             className="w-full px-3 py-2 bg-white rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
                         >
-                            <option value="">Semua Area</option>
-                            <option value="sektor-a">Sektor A</option>
-                            <option value="sektor-b">Sektor B</option>
-                            <option value="sektor-c">Sektor C</option>
-                            <option value="gudang">Gudang Logistik</option>
+                            <option value="">Semua Divisi</option>
+                            <option value="Tim Logistik">Tim Logistik</option>
+                            <option value="Tim Legal">Tim Legal</option>
+                            <option value="Sekretaris">Sekretaris</option>
+                            <option value="Superadmin">Superadmin</option>
                         </select>
                     </div>
+                    )}
                 </div>
 
                 {/* Filter Actions */}
                 <div className="flex items-center justify-end gap-2">
                     <button
-                        onClick={() => setFilters({ jenis: '', status: '', periode: '', lokasi: '' })}
+                        onClick={() => {
+                            setFilters({ jenis: '', status: '', periode: '', lokasi: '' });
+                            router.get(route('documents.index'), {}, { preserveState: true });
+                        }}
                         className="px-4 py-2 text-sm font-hanken font-bold text-gray-600 hover:text-gray-900 transition-colors"
                     >
                         Reset Filter
                     </button>
-                    <button className="px-6 py-2 bg-primary-900 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors">
+                    <button
+                        onClick={() => {
+                            const params = {};
+                            if (filters.jenis) params.jenis = filters.jenis;
+                            if (filters.status) params.status = filters.status;
+                            if (isSuperAdmin && filters.lokasi) params.divisi = filters.lokasi;
+                            router.get(route('documents.index'), params, { preserveState: true });
+                        }}
+                        className="px-6 py-2 bg-primary-900 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors"
+                    >
                         Terapkan Filter
                     </button>
                 </div>
@@ -203,7 +233,7 @@ export default function DocumentIndex({ documents = [] }) {
                         <div className="w-[120px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
                             STATUS
                         </div>
-                        <div className="w-[140px] px-4 py-4 text-center text-xs font-mono font-medium text-primary-900 tracking-wider">
+                        <div className="w-[170px] px-4 py-4 text-center text-xs font-mono font-medium text-primary-900 tracking-wider">
                             AKSI
                         </div>
                     </div>
@@ -246,7 +276,7 @@ export default function DocumentIndex({ documents = [] }) {
                             <div className="w-[120px] px-4 py-6">
                                 <StatusBadge status={doc.status} />
                             </div>
-                            <div className="w-[140px] px-4 py-6 flex items-center justify-center gap-2 opacity-60">
+                            <div className="w-[170px] px-4 py-6 flex items-center justify-center gap-2 opacity-60">
                                 <Link
                                     href={`/documents/${doc.id}`}
                                     className="p-1.5 rounded hover:bg-surface transition-colors"
@@ -260,6 +290,19 @@ export default function DocumentIndex({ documents = [] }) {
                                 <button className="p-1.5 rounded hover:bg-surface transition-colors" title="Unduh">
                                     <DownloadIcon />
                                 </button>
+                                {isSuperAdmin && (
+                                    <button
+                                        onClick={() => {
+                                            if (confirm('Yakin ingin menghapus dokumen ini secara permanen? Tindakan ini tidak dapat dibatalkan.')) {
+                                                router.delete(route('documents.destroy', doc.id));
+                                            }
+                                        }}
+                                        className="p-1.5 rounded hover:bg-[#FFDAD6] transition-colors"
+                                        title="Hapus"
+                                    >
+                                        <TrashIcon />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     )))}
@@ -268,7 +311,7 @@ export default function DocumentIndex({ documents = [] }) {
                 {/* Pagination */}
                 <div className="flex items-center justify-between px-6 py-4 border-t border-surface-border">
                     <div className="text-sm font-hanken text-gray-600">
-                        Menampilkan 1 - 4 dari 128 dokumen
+                        Menampilkan {documents.length > 0 ? 1 : 0} - {documents.length} dari {documents.length} dokumen
                     </div>
                     <div className="flex items-center gap-1">
                         <button className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-surface transition-colors">
@@ -308,20 +351,35 @@ export default function DocumentIndex({ documents = [] }) {
                     </div>
                 ) : (
                     documents.map((doc) => (
-                    <Link
+                    <div
                         key={doc.id}
-                        href={`/documents/${doc.id}`}
                         className="bg-white shadow-sm rounded-xl border border-surface-border p-4 flex flex-col gap-2 hover:bg-surface/30 transition-colors"
                     >
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-hanken font-medium text-primary-900">
+                            <Link href={`/documents/${doc.id}`} className="text-xs font-hanken font-medium text-primary-900">
                                 {doc.nomor}
-                            </span>
-                            <StatusBadge status={doc.status} />
+                            </Link>
+                            <div className="flex items-center gap-2">
+                                <StatusBadge status={doc.status} />
+                                {isSuperAdmin && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            if (confirm('Yakin ingin menghapus dokumen ini secara permanen?')) {
+                                                router.delete(route('documents.destroy', doc.id));
+                                            }
+                                        }}
+                                        className="p-1 rounded hover:bg-[#FFDAD6] transition-colors"
+                                        title="Hapus"
+                                    >
+                                        <TrashIcon />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                        <p className="text-sm font-hanken font-bold text-gray-900">
+                        <Link href={`/documents/${doc.id}`} className="text-sm font-hanken font-bold text-gray-900">
                             {doc.perihal}
-                        </p>
+                        </Link>
                         <div className="flex items-center justify-between">
                             <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-hanken ${jenisColors[doc.jenis] || 'bg-gray-100'}`}>
                                 {doc.jenis}
@@ -330,14 +388,14 @@ export default function DocumentIndex({ documents = [] }) {
                                 {doc.tanggal}
                             </span>
                         </div>
-                    </Link>
+                    </div>
                 )))}
             </div>
 
             {/* Pagination - Mobile */}
             <div className="md:hidden flex items-center justify-between mt-4">
                 <div className="text-xs font-hanken text-gray-600">
-                    1-4 dari 128
+                    1-{documents.length} dari {documents.length}
                 </div>
                 <div className="flex items-center gap-1">
                     <button className="w-8 h-8 flex items-center justify-center rounded bg-primary-700 text-white text-sm font-hanken font-bold">

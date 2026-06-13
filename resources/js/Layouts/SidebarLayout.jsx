@@ -4,7 +4,8 @@ import { Link, usePage, router } from '@inertiajs/react';
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: DashboardIcon },
     { name: 'Daftar Dokumen', href: '/documents', icon: DocumentIcon },
-    { name: 'Input Baru', href: '/create', icon: PlusIcon },
+    { name: 'Arsip', href: '/documents-arsip', icon: ArchiveIcon },
+    { name: 'Input Dokumen', href: '/create', icon: PlusIcon },
     { name: 'Pengaturan', href: '/settings', icon: SettingsIcon },
 ];
 
@@ -42,6 +43,16 @@ function SettingsIcon({ className }) {
         <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" strokeWidth="1.5" />
             <path d="M16.1654 12.1654L14.8821 13.4487C14.7488 13.582 14.6388 13.739 14.5588 13.9104L14.0338 15.042C13.8768 15.3803 13.5368 15.5965 13.1638 15.5965L6.83542 15.5965C6.46242 15.5965 6.12242 15.3803 5.96542 15.042L5.44042 13.9104C5.36042 13.739 5.25042 13.582 5.11709 13.4487L3.83376 12.1654C3.54876 11.8804 3.54876 11.4187 3.83376 11.1337L4.78209 10.1854C4.89209 10.0754 4.97209 9.93709 5.01209 9.78876L5.48709 8.04542C5.62476 7.55042 6.08709 7.18709 6.60209 7.18709L7.50209 7.18709C7.74209 7.18709 7.97209 7.09209 8.14209 6.93542L10 5.07709C10.2851 4.79209 10.7468 4.79209 11.0318 5.07709L12.8894 6.93542C13.0594 7.09209 13.2894 7.18709 13.5294 7.18709L14.4294 7.18709C14.9444 7.18709 15.4068 7.55042 15.5444 8.04542L16.0194 9.78876C16.0594 9.93709 16.1394 10.0754 16.2494 10.1854L17.1978 11.1337C17.4828 11.4187 17.4828 11.8804 17.1978 12.1654H16.1654Z" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+    );
+}
+
+function ArchiveIcon({ className }) {
+    return (
+        <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="1" width="18" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M3 7V17C3 17.5523 3.44772 18 4 18H16C16.5523 18 17 17.5523 17 17V7" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M8 11H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
     );
 }
@@ -93,7 +104,7 @@ const helpContents = {
         ]
     },
     '/create': {
-        title: 'Panduan Input Dokumen Baru',
+        title: 'Panduan Input Dokumen',
         sections: [
             {
                 title: 'Unggah Berkas Scan',
@@ -144,7 +155,7 @@ const helpContents = {
             },
             {
                 title: 'Navigasi Menu',
-                text: 'Gunakan sidebar sebelah kiri untuk berpindah halaman antara Dashboard, Daftar Dokumen, Input Baru, dan Pengaturan.'
+                text: 'Gunakan sidebar sebelah kiri untuk berpindah halaman antara Dashboard, Daftar Dokumen, , dan Pengaturan.'
             },
             {
                 title: 'Butuh Bantuan?',
