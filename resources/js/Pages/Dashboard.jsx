@@ -98,18 +98,19 @@ export default function Dashboard({
                 ))}
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
-                {/* Document Table - 2 columns on desktop */}
-                <div className="lg:col-span-2">
-                    <DocumentTable documents={documents} />
-                </div>
-
-                {/* Right Sidebar - 1 column on desktop */}
-                <div className="flex flex-col gap-6 md:gap-8">
+            {/* Urgent Warnings & Activity Feed - Side by Side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
+                <div className="h-[320px]">
                     <UrgentWarning warnings={urgentWarnings} />
+                </div>
+                <div className="h-[320px]">
                     <ActivityFeed activities={activities} />
                 </div>
+            </div>
+
+            {/* Document Table */}
+            <div className="mb-6 md:mb-8">
+                <DocumentTable documents={documents} />
             </div>
 
             {/* Banner */}
