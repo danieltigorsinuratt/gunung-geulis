@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: DashboardIcon },
@@ -290,6 +290,16 @@ export default function SidebarLayout({ children }) {
                                 {user?.jabatan || 'Staff'}
                             </div>
                         </div>
+                        <button
+                            onClick={() => router.post(route('logout'))}
+                            className="p-2 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
+                            title="Keluar"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M6 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H6" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                                <path d="M11 8L14 8M14 8L11 5M14 8L11 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </aside>
