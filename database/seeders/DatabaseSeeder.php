@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'superadmin@gmail.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
+            'role_type' => 'superadmin',
         ]);
 
         User::factory()->create([

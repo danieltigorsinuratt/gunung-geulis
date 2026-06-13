@@ -1,7 +1,8 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Modal from '@/Components/Modal';
+import Toast from '@/Components/Toast';
 
 const tabs = [
     { id: 'profil', label: 'Profil' },
@@ -11,37 +12,86 @@ const tabs = [
 ];
 
 function ProfileTab({ user }) {
-    const [form, setForm] = useState({
+    const isSuperAdmin = user?.role_type === 'superadmin';
+    const fileInputRef = useRef(null);
+
+    const form = useForm({
         name: user?.name || '',
         email: user?.email || '',
-        role: 'Head of Logistics',
-        phone: '',
+        phone: user?.phone || '',
+        jabatan: user?.jabatan || '',
     });
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        form.patch(route('profile.update'), {
+            preserveScroll: true,
+        });
+    };
+
+    const handlePhotoUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        router.post(route('profile.photo.update'), formData, {
+            preserveScroll: true,
+        });
+    };
+
+    const handlePhotoDelete = () => {
+        router.delete(route('profile.photo.delete'), {
+            preserveScroll: true,
+        });
     };
 
     return (
-        <div className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             {/* Avatar Section */}
             <div className="bg-white shadow-sm rounded-xl border border-surface-border p-6">
                 <label className="block text-xs font-mono font-medium text-gray-600 tracking-wider uppercase mb-4">
                     FOTO PROFIL
                 </label>
                 <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 rounded-full bg-primary-700 flex items-center justify-center">
-                        <span className="text-white text-2xl font-hanken font-bold">
-                            {user?.name?.charAt(0) || 'A'}
-                        </span>
-                    </div>
+                    {user?.avatar ? (
+                        <img
+                            src={`/storage/avatars/${user.avatar}`}
+                            alt="Foto Profil"
+                            className="w-20 h-20 rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-20 h-20 rounded-full bg-primary-700 flex items-center justify-center">
+                            <span className="text-white text-2xl font-hanken font-bold">
+                                {user?.name?.charAt(0) || 'A'}
+                            </span>
+                        </div>
+                    )}
                     <div className="flex flex-col gap-2">
-                        <button className="px-4 py-2 bg-primary-700 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors">
+                        <input
+                            type="file"
+                            accept="image/jpeg,image/png"
+                            className="hidden"
+                            ref={(el) => { fileInputRef.current = el; }}
+                            onChange={handlePhotoUpload}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-4 py-2 bg-primary-700 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors"
+                        >
                             Unggah Foto
                         </button>
-                        <button className="px-4 py-2 border border-surface-border rounded-lg text-gray-600 text-sm font-hanken font-bold hover:bg-surface transition-colors">
-                            Hapus Foto
-                        </button>
+                        {user?.avatar && (
+                            <button
+                                type="button"
+                                onClick={handlePhotoDelete}
+                                className="px-4 py-2 border border-surface-border rounded-lg text-gray-600 text-sm font-hanken font-bold hover:bg-surface transition-colors"
+                            >
+                                Hapus Foto
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -58,23 +108,33 @@ function ProfileTab({ user }) {
                         </label>
                         <input
                             type="text"
-                            name="name"
-                            value={form.name}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                            value={form.data.name}
+                            onChange={(e) => form.setData('name', e.target.value)}
+                            className={`w-full px-4 py-2.5 bg-surface rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                form.errors.name ? 'border-red-400' : 'border-surface-border'
+                            }`}
                         />
+                        {form.errors.name && <p className="text-xs text-red-500 font-hanken">{form.errors.name}</p>}
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-hanken font-bold text-gray-900">
                             Email
+                            {!isSuperAdmin && (
+                                <span className="ml-2 text-xs font-normal text-gray-400">(tidak dapat diubah)</span>
+                            )}
                         </label>
                         <input
                             type="email"
-                            name="email"
-                            value={form.email}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                            value={form.data.email}
+                            onChange={(e) => form.setData('email', e.target.value)}
+                            readOnly={!isSuperAdmin}
+                            className={`w-full px-4 py-2.5 rounded-lg border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                isSuperAdmin
+                                    ? 'bg-surface border-surface-border'
+                                    : 'bg-gray-100 border-gray-200 cursor-not-allowed'
+                            } ${form.errors.email ? 'border-red-400' : ''}`}
                         />
+                        {form.errors.email && <p className="text-xs text-red-500 font-hanken">{form.errors.email}</p>}
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-hanken font-bold text-gray-900">
@@ -82,10 +142,9 @@ function ProfileTab({ user }) {
                         </label>
                         <input
                             type="text"
-                            name="role"
-                            value={form.role}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
+                            value={form.data.jabatan}
+                            readOnly
+                            className="w-full px-4 py-2.5 bg-gray-100 rounded-lg border border-gray-200 text-sm font-hanken text-gray-900 cursor-not-allowed"
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -94,42 +153,58 @@ function ProfileTab({ user }) {
                         </label>
                         <input
                             type="tel"
-                            name="phone"
-                            value={form.phone}
-                            onChange={handleChange}
+                            value={form.data.phone}
+                            onChange={(e) => form.setData('phone', e.target.value)}
                             placeholder="08xxxxxxxxxx"
-                            className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700"
+                            className={`w-full px-4 py-2.5 bg-surface rounded-lg border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                form.errors.phone ? 'border-red-400' : 'border-surface-border'
+                            }`}
                         />
+                        {form.errors.phone && <p className="text-xs text-red-500 font-hanken">{form.errors.phone}</p>}
                     </div>
                 </div>
             </div>
 
             {/* Save Button */}
             <div className="flex justify-end">
-                <button className="px-6 py-2.5 bg-primary-700 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2">
+                <button
+                    type="submit"
+                    disabled={form.processing}
+                    className="px-6 py-2.5 bg-primary-700 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                    {form.processing && (
+                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                    )}
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M13 3L6 14L3 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                     Simpan Profil
                 </button>
             </div>
-        </div>
+        </form>
     );
 }
 
 function PasswordTab() {
-    const [form, setForm] = useState({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
+    const form = useForm({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
     });
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        form.put(route('password.update'), {
+            preserveScroll: true,
+            onSuccess: () => form.reset(),
+        });
     };
 
     return (
-        <div className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="bg-white shadow-sm rounded-xl border border-surface-border p-6">
                 <label className="block text-xs font-mono font-medium text-gray-600 tracking-wider uppercase mb-4">
                     UBAH PASSWORD
@@ -141,12 +216,14 @@ function PasswordTab() {
                         </label>
                         <input
                             type="password"
-                            name="currentPassword"
-                            value={form.currentPassword}
-                            onChange={handleChange}
+                            value={form.data.current_password}
+                            onChange={(e) => form.setData('current_password', e.target.value)}
                             placeholder="Masukkan password saat ini"
-                            className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700"
+                            className={`w-full px-4 py-2.5 bg-surface rounded-lg border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                form.errors.current_password ? 'border-red-400' : 'border-surface-border'
+                            }`}
                         />
+                        {form.errors.current_password && <p className="text-xs text-red-500 font-hanken">{form.errors.current_password}</p>}
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-hanken font-bold text-gray-900">
@@ -154,12 +231,14 @@ function PasswordTab() {
                         </label>
                         <input
                             type="password"
-                            name="newPassword"
-                            value={form.newPassword}
-                            onChange={handleChange}
-                            placeholder="Masukkan password baru"
-                            className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700"
+                            value={form.data.password}
+                            onChange={(e) => form.setData('password', e.target.value)}
+                            placeholder="Minimal 8 karakter"
+                            className={`w-full px-4 py-2.5 bg-surface rounded-lg border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                form.errors.password ? 'border-red-400' : 'border-surface-border'
+                            }`}
                         />
+                        {form.errors.password && <p className="text-xs text-red-500 font-hanken">{form.errors.password}</p>}
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-hanken font-bold text-gray-900">
@@ -167,9 +246,8 @@ function PasswordTab() {
                         </label>
                         <input
                             type="password"
-                            name="confirmPassword"
-                            value={form.confirmPassword}
-                            onChange={handleChange}
+                            value={form.data.password_confirmation}
+                            onChange={(e) => form.setData('password_confirmation', e.target.value)}
                             placeholder="Ulangi password baru"
                             className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700"
                         />
@@ -178,7 +256,17 @@ function PasswordTab() {
             </div>
 
             <div className="flex justify-end">
-                <button className="px-6 py-2.5 bg-primary-700 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2">
+                <button
+                    type="submit"
+                    disabled={form.processing}
+                    className="px-6 py-2.5 bg-primary-700 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                    {form.processing && (
+                        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                    )}
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <rect x="3" y="7" width="10" height="8" rx="1" stroke="currentColor" strokeWidth="1.5"/>
                         <path d="M5 7V5C5 3.34315 6.34315 2 8 2C9.65685 2 11 3.34315 11 5V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -186,7 +274,7 @@ function PasswordTab() {
                     Perbarui Password
                 </button>
             </div>
-        </div>
+        </form>
     );
 }
 
@@ -516,11 +604,19 @@ function ManageUserTab({ users = [] }) {
                                 {String(index + 1).padStart(2, '0')}
                             </div>
                             <div className="flex-1 px-4 py-4 flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-primary-700 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-white text-sm font-hanken font-bold">
-                                        {user.nama.charAt(0)}
-                                    </span>
-                                </div>
+                                {user.avatar ? (
+                                    <img
+                                        src={`/storage/avatars/${user.avatar}`}
+                                        alt={user.nama}
+                                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                                    />
+                                ) : (
+                                    <div className="w-10 h-10 rounded-full bg-primary-700 flex items-center justify-center flex-shrink-0">
+                                        <span className="text-white text-sm font-hanken font-bold">
+                                            {user.nama.charAt(0)}
+                                        </span>
+                                    </div>
+                                )}
                                 <div>
                                     <p className="text-sm font-hanken font-bold text-gray-900">{user.nama}</p>
                                     <p className="text-xs font-hanken text-gray-500">{user.email}</p>
@@ -976,16 +1072,31 @@ function ManageUserTab({ users = [] }) {
 }
 
 export default function Settings({ users = [] }) {
-    const { auth } = usePage().props;
+    const { auth, flash } = usePage().props;
 
     // Baca tab dari URL query parameter, default ke 'profil'
     const urlParams = new URLSearchParams(window.location.search);
     const tabFromUrl = urlParams.get('tab');
-    const validTabIds = tabs.map(t => t.id);
+    const isSuperAdmin = auth?.user?.role_type === 'superadmin';
+    const validTabIds = tabs.filter(t => t.id !== 'users' || isSuperAdmin).map(t => t.id);
     const initialTab = validTabIds.includes(tabFromUrl) ? tabFromUrl : 'profil';
 
     const [activeTab, setActiveTab] = useState(initialTab);
     const [isMounted, setIsMounted] = useState(false);
+
+    // Toast notification state
+    const [toast, setToast] = useState(null);
+
+    // Tampilkan toast jika ada flash message
+    useEffect(() => {
+        if (flash?.success) {
+            setToast({ message: flash.success, type: 'success' });
+        } else if (flash?.error) {
+            setToast({ message: flash.error, type: 'error' });
+        }
+    }, [flash]);
+
+    const closeToast = useCallback(() => setToast(null), []);
 
     // Update URL query parameter saat tab berubah (tanpa full reload)
     useEffect(() => {
@@ -1008,6 +1119,15 @@ export default function Settings({ users = [] }) {
         <SidebarLayout>
             <Head title="Pengaturan" />
 
+            {/* Toast Notification */}
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={closeToast}
+                />
+            )}
+
             <div className="max-w-[1024px] mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -1021,7 +1141,7 @@ export default function Settings({ users = [] }) {
 
                 {/* Tabs */}
                 <div className="flex gap-1 mb-6 border-b border-surface-border">
-                    {tabs.map((tab) => (
+                    {tabs.filter(tab => tab.id !== 'users' || auth?.user?.role_type === 'superadmin').map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
@@ -1040,7 +1160,7 @@ export default function Settings({ users = [] }) {
                 {activeTab === 'profil' && <ProfileTab user={auth?.user} />}
                 {activeTab === 'password' && <PasswordTab />}
                 {activeTab === 'notifikasi' && <NotificationTab />}
-                {activeTab === 'users' && <ManageUserTab users={users} />}
+                {activeTab === 'users' && isSuperAdmin && <ManageUserTab users={users} />}
             </div>
         </SidebarLayout>
     );

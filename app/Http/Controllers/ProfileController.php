@@ -2,42 +2,86 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Update the user's profile information.
      */
-    public function edit(Request $request): Response
+    public function update(Request $request): RedirectResponse
     {
-        return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
-            'status' => session('status'),
-        ]);
+        $user = $request->user();
+
+        $rules = [
+            'name'  => ['required', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+        ];
+
+        // Hanya superadmin yang boleh ubah email
+        if ($request->has('email') && $user->role_type === 'superadmin') {
+            $rules['email'] = ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id];
+        }
+
+        $validated = $request->validate($rules);
+
+        $user->name = $validated['name'];
+        $user->phone = $validated['phone'] ?? null;
+
+        // Update email hanya jika superadmin
+        if (isset($validated['email']) && $user->role_type === 'superadmin') {
+            $user->email = $validated['email'];
+        }
+
+        $user->save();
+
+        return redirect()->route('settings', ['tab' => 'profil'])->with('success', 'Profil berhasil diperbarui.');
     }
 
     /**
-     * Update the user's profile information.
+     * Upload foto profil.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function updatePhoto(Request $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+        ]);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user = $request->user();
+
+        // Hapus foto lama jika ada
+        if ($user->avatar) {
+            Storage::disk('public')->delete('avatars/' . $user->avatar);
         }
 
-        $request->user()->save();
+        // Simpan foto baru
+        $file = $request->file('avatar');
+        $filename = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
+        $file->storeAs('avatars', $filename, 'public');
 
-        return Redirect::route('profile.edit');
+        $user->update(['avatar' => $filename]);
+
+        return redirect()->route('settings', ['tab' => 'profil'])->with('success', 'Foto profil berhasil diunggah.');
+    }
+
+    /**
+     * Hapus foto profil.
+     */
+    public function deletePhoto(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar) {
+            Storage::disk('public')->delete('avatars/' . $user->avatar);
+            $user->update(['avatar' => null]);
+        }
+
+        return redirect()->route('settings', ['tab' => 'profil'])->with('success', 'Foto profil berhasil dihapus.');
     }
 
     /**
@@ -50,6 +94,11 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        // Hapus foto profil jika ada
+        if ($user->avatar) {
+            Storage::disk('public')->delete('avatars/' . $user->avatar);
+        }
 
         Auth::logout();
 

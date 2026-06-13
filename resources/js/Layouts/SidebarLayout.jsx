@@ -269,18 +269,25 @@ export default function SidebarLayout({ children }) {
                 {/* User Info */}
                 <div className="px-6 py-5 border-t border-white/10">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary-700 flex items-center justify-center">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <circle cx="8" cy="5" r="3" fill="white" />
-                                <path d="M2 14C2 11.2386 4.68629 9 8 9C11.3137 9 14 11.2386 14 14" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-                            </svg>
-                        </div>
+                        {user?.avatar ? (
+                            <img
+                                src={`/storage/avatars/${user.avatar}`}
+                                alt={user.name}
+                                className="w-8 h-8 rounded-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-8 h-8 rounded-full bg-primary-700 flex items-center justify-center">
+                                <span className="text-white text-xs font-hanken font-bold">
+                                    {user?.name?.charAt(0) || 'A'}
+                                </span>
+                            </div>
+                        )}
                         <div>
                             <div className="text-white text-sm font-medium font-hanken">
                                 {user?.name || 'Admin GG Farm'}
                             </div>
                             <div className="text-accent-light/70 text-[10px] font-mono">
-                                Head of Logistics
+                                {user?.jabatan || 'Staff'}
                             </div>
                         </div>
                     </div>

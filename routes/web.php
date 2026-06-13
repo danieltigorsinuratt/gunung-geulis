@@ -42,6 +42,7 @@ Route::get('/settings', function () {
             'lastLoginAt' => $user->last_login_at
                                 ? $user->last_login_at->timestamp
                                 : null,
+            'avatar'      => $user->avatar,
             'role_type'   => $user->role_type ?? 'admin',
         ];
     });
@@ -51,16 +52,17 @@ Route::get('/settings', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('settings');
 
-// User Management (superadmin only in the future, for now auth only)
-Route::middleware(['auth'])->group(function () {
+// User Management (superadmin only)
+Route::middleware(['auth', 'superadmin'])->group(function () {
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.photo.update');
+    Route::delete('/profile/photo', [ProfileController::class, 'deletePhoto'])->name('profile.photo.delete');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
