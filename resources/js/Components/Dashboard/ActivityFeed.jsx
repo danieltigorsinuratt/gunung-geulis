@@ -42,22 +42,20 @@ const iconMap = {
 
 export default function ActivityFeed({ activities }) {
     return (
-        <div className="flex flex-col gap-4">
-            <h2 className="text-xl font-hanken font-semibold text-primary-900">
-                Aktivitas Terbaru
-            </h2>
-            <div className="bg-white rounded-xl border border-surface-border p-5">
-                <div className="relative">
-                    {/* Vertical line */}
-                    <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-surface" />
+        <div className="bg-white rounded-xl border border-surface-border h-full flex flex-col overflow-hidden">
+            <div className="px-6 py-4 border-b border-surface-border flex-shrink-0">
+                <h2 className="text-base md:text-lg font-hanken font-semibold text-primary-900">
+                    Aktivitas Terbaru
+                </h2>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+                {activities.length > 0 ? (
+                    <div className="relative">
+                        {/* Vertical line */}
+                        <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-surface" />
 
-                    <div className="flex flex-col gap-6">
-                        {activities.length === 0 ? (
-                            <div className="text-center text-xs font-hanken text-gray-500 py-4">
-                                Belum ada aktivitas hari ini.
-                            </div>
-                        ) : (
-                            activities.map((activity) => {
+                        <div className="flex flex-col gap-6">
+                            {activities.map((activity) => {
                                 const IconComponent = iconMap[activity.icon] || UploadIcon;
                                 return (
                                     <div key={activity.id} className="relative pl-8">
@@ -81,10 +79,16 @@ export default function ActivityFeed({ activities }) {
                                         </div>
                                     </div>
                                 );
-                            })
-                        )}
+                            })}
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="h-full flex items-center justify-center">
+                        <p className="text-sm font-hanken text-gray-400">
+                            Belum ada aktivitas hari ini.
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );
