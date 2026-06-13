@@ -403,7 +403,6 @@ function getLoginDuration(timestamp) {
 }
 
 function ManageUserTab({ users = [] }) {
-    const [search, setSearch] = useState('');
     const [filterDivisi, setFilterDivisi] = useState('');
 
     // Modals visibility states
@@ -440,10 +439,8 @@ function ManageUserTab({ users = [] }) {
     const [showEditPwd, setShowEditPwd] = useState(false);
 
     const filteredUsers = users.filter((user) => {
-        const matchSearch = user.nama.toLowerCase().includes(search.toLowerCase()) ||
-                           user.email.toLowerCase().includes(search.toLowerCase());
         const matchDivisi = filterDivisi === '' || user.divisi === filterDivisi;
-        return matchSearch && matchDivisi;
+        return matchDivisi;
     });
 
     const stats = {
@@ -529,57 +526,6 @@ function ManageUserTab({ users = [] }) {
                 </div>
             </div>
 
-            {/* Search & Filter */}
-            <div className="bg-white shadow-sm rounded-xl border border-surface-border p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    {/* Left: Shrunk Search & Select */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                        <div className="w-full sm:w-72">
-                            <div className="flex items-center gap-2 bg-surface rounded-lg px-4 py-2.5">
-                                <svg className="w-4 h-4 text-gray-400" viewBox="0 0 18 18" fill="none">
-                                    <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-                                    <path d="M12 12L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                </svg>
-                                <input
-                                    type="search"
-                                    name="user-search"
-                                    autoComplete="off"
-                                    placeholder="Cari nama atau email..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="w-full bg-transparent text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none"
-                                />
-                            </div>
-                        </div>
-                        <select
-                            value={filterDivisi}
-                            onChange={(e) => setFilterDivisi(e.target.value)}
-                            className="px-4 py-2.5 bg-surface rounded-lg border-0 text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
-                        >
-                            <option value="">Semua Divisi</option>
-                            <option value="Tim Logistik">Tim Logistik</option>
-                            <option value="Tim Legal">Tim Legal</option>
-                            <option value="Sekretaris">Sekretaris</option>
-                            <option value="Superadmin">Superadmin</option>
-                        </select>
-                    </div>
-
-                    {/* Right: Actions */}
-                    <button 
-                        onClick={() => {
-                            addForm.reset();
-                            setIsAddOpen(true);
-                        }}
-                        className="w-full sm:w-auto px-5 py-2.5 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-sm font-hanken font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path d="M7 1V13M1 7H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                        Tambah User
-                    </button>
-                </div>
-            </div>
-
             {/* Users Table */}
             <div className="bg-white shadow-sm rounded-xl border border-surface-border overflow-hidden">
                 {/* Table Header - Desktop */}
@@ -591,20 +537,41 @@ function ManageUserTab({ users = [] }) {
                         <div className="flex-1 px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
                             NAMA & EMAIL
                         </div>
-                        <div className="w-[140px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
-                            DIVISI
+                        <div className="w-[160px] px-4 py-4">
+                            <select
+                                value={filterDivisi}
+                                onChange={(e) => setFilterDivisi(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-white rounded border-0 text-[10px] font-mono font-medium text-primary-900 tracking-wider uppercase outline-none cursor-pointer"
+                            >
+                                <option value="">DIVISI</option>
+                                <option value="Tim Logistik">TIM LOGISTIK</option>
+                                <option value="Tim Legal">TIM LEGAL</option>
+                                <option value="Sekretaris">SEKRETARIS</option>
+                                <option value="Superadmin">SUPERADMIN</option>
+                            </select>
                         </div>
                         <div className="w-[140px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
                             JABATAN
                         </div>
-                        <div className="w-[120px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
+                        <div className="w-[100px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
                             STATUS
                         </div>
-                        <div className="w-[120px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
+                        <div className="w-[100px] px-4 py-4 text-xs font-mono font-medium text-primary-900 tracking-wider">
                             LOGIN
                         </div>
-                        <div className="w-[100px] px-4 py-4 text-center text-xs font-mono font-medium text-primary-900 tracking-wider">
-                            AKSI
+                        <div className="w-[120px] px-4 py-4 flex items-center justify-end gap-2">
+                            <button
+                                onClick={() => {
+                                    addForm.reset();
+                                    setIsAddOpen(true);
+                                }}
+                                className="px-3 py-1.5 bg-primary-700 hover:bg-primary-800 text-white rounded text-[10px] font-mono font-medium tracking-wider uppercase transition-colors flex items-center gap-1"
+                            >
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                    <path d="M5 1V9M1 5H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                </svg>
+                                ADD
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -638,17 +605,18 @@ function ManageUserTab({ users = [] }) {
                                 <div>
                                     <p className="text-sm font-hanken font-bold text-gray-900">{user.nama}</p>
                                     <p className="text-xs font-hanken text-gray-500">{user.email}</p>
+                                    <p className="text-[10px] font-hanken text-gray-400">{user.phone || '-'}</p>
                                 </div>
                             </div>
-                            <div className="w-[140px] px-4 py-4">
+                            <div className="w-[160px] px-4 py-4">
                                 <span className={`inline-block px-3 py-1 rounded-full text-xs font-hanken font-bold ${divisiColors[user.divisi] || 'bg-gray-100'}`}>
-                                    {user.divisi}
+                                    {user.divisi || '-'}
                                 </span>
                             </div>
                             <div className="w-[140px] px-4 py-4 text-sm font-hanken text-gray-900">
-                                {user.role}
+                                {user.role || '-'}
                             </div>
-                            <div className="w-[120px] px-4 py-4">
+                            <div className="w-[100px] px-4 py-4">
                                 <div className="flex items-center gap-1.5">
                                     <span className={`w-2 h-2 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
                                     <span className={`text-xs font-hanken font-bold ${user.isOnline ? 'text-green-600' : 'text-gray-400'}`}>
@@ -656,11 +624,11 @@ function ManageUserTab({ users = [] }) {
                                     </span>
                                 </div>
                             </div>
-                            <div className="w-[120px] px-4 py-4 text-xs font-hanken text-gray-500">
+                            <div className="w-[100px] px-4 py-4 text-xs font-hanken text-gray-500">
                                 {user.isOnline ? getLoginDuration(user.lastLoginAt) : '-'}
                             </div>
-                            <div className="w-[100px] px-4 py-4 flex items-center justify-center gap-1">
-                                <button 
+                            <div className="w-[120px] px-4 py-4 flex items-center justify-end gap-1">
+                                <button
                                     onClick={() => {
                                         setSelectedUser(user);
                                         const isDivisiValid = ['Tim Logistik', 'Tim Legal', 'Sekretaris', 'Superadmin'].includes(user.divisi);
@@ -712,6 +680,7 @@ function ManageUserTab({ users = [] }) {
                                     <div>
                                         <p className="text-sm font-hanken font-bold text-gray-900">{user.nama}</p>
                                         <p className="text-xs font-hanken text-gray-500">{user.email}</p>
+                                        <p className="text-[10px] font-hanken text-gray-400">{user.phone || '-'}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1">

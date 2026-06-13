@@ -246,12 +246,10 @@ export default function DocumentCreate() {
                                             onChange={handleChange}
                                             className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
                                         >
-                                            <option value="">Pilih Staf / Unit</option>
-                                            <option value="kepala-bidang">Kepala Bidang</option>
-                                            <option value="admin">Admin</option>
-                                            <option value="keuangan">Keuangan</option>
-                                            <option value="hrd">HRD</option>
-                                            <option value="operasional">Operasional</option>
+                                            <option value="">Pilih Divisi</option>
+                                            <option value="tim-logistik">Tim Logistik</option>
+                                            <option value="tim-legal">Tim Legal</option>
+                                            <option value="sekretaris">Sekretaris</option>
                                         </select>
                                     </div>
                                     <div className="flex flex-col gap-1.5">
