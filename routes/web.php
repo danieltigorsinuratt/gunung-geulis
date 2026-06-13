@@ -43,6 +43,7 @@ Route::get('/settings', function () {
                                 ? $user->last_login_at->timestamp
                                 : null,
             'avatar'      => $user->avatar,
+            'phone'       => $user->phone ?? '-',
             'role_type'   => $user->role_type ?? 'admin',
         ];
     });

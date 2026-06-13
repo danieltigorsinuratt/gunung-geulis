@@ -416,6 +416,7 @@ function ManageUserTab({ users = [] }) {
         name: '',
         email: '',
         password: '',
+        phone: '',
         divisi: 'Tim Logistik',
         jabatan: '',
         status: 'Active',
@@ -426,6 +427,7 @@ function ManageUserTab({ users = [] }) {
         name: '',
         email: '',
         password: '',
+        phone: '',
         divisi: 'Tim Logistik',
         jabatan: '',
         status: 'Active',
@@ -636,13 +638,14 @@ function ManageUserTab({ users = [] }) {
                                             name: user.nama,
                                             email: user.email,
                                             password: '',
+                                            phone: user.phone || '',
                                             divisi: isDivisiValid ? user.divisi : 'Tim Logistik',
                                             jabatan: user.role,
                                             status: user.status
                                         });
                                         setIsEditOpen(true);
                                     }}
-                                    className="p-1 rounded hover:bg-surface text-[#8B6914] transition-colors" 
+                                    className="p-1 rounded hover:bg-surface text-[#8B6914] transition-colors"
                                     title="Edit User"
                                 >
                                     <svg width="15" height="15" viewBox="0 0 17 17" fill="none">
@@ -713,13 +716,14 @@ function ManageUserTab({ users = [] }) {
                                                 name: user.nama,
                                                 email: user.email,
                                                 password: '',
+                                                phone: user.phone || '',
                                                 divisi: isDivisiValid ? user.divisi : 'Tim Logistik',
                                                 jabatan: user.role,
                                                 status: user.status
                                             });
                                             setIsEditOpen(true);
                                         }}
-                                        className="text-[#8B6914] text-xs font-hanken font-bold hover:underline" 
+                                        className="text-[#8B6914] text-xs font-hanken font-bold hover:underline"
                                         title="Edit User"
                                     >
                                         Edit
@@ -856,6 +860,21 @@ function ManageUserTab({ users = [] }) {
                             </div>
                             {addForm.errors.password && <p className="text-xs text-red-500 font-hanken">{addForm.errors.password}</p>}
                         </div>
+
+                        {/* No. Telepon */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-hanken font-bold text-gray-900">No. Telepon</label>
+                            <input
+                                type="tel"
+                                value={addForm.data.phone}
+                                onChange={(e) => addForm.setData('phone', e.target.value)}
+                                placeholder="08xxxxxxxxxx"
+                                className={`w-full px-4 py-2.5 bg-white rounded-lg border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                    addForm.errors.phone ? 'border-red-400' : 'border-surface-border'
+                                }`}
+                            />
+                            {addForm.errors.phone && <p className="text-xs text-red-500 font-hanken">{addForm.errors.phone}</p>}
+                        </div>
                     </div>
 
                     <div className="mt-6 flex justify-end gap-3">
@@ -967,6 +986,21 @@ function ManageUserTab({ users = [] }) {
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
                             </select>
+                        </div>
+
+                        {/* No. Telepon */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-hanken font-bold text-gray-900">No. Telepon</label>
+                            <input
+                                type="tel"
+                                value={editForm.data.phone}
+                                onChange={(e) => editForm.setData('phone', e.target.value)}
+                                placeholder="08xxxxxxxxxx"
+                                className={`w-full px-4 py-2.5 bg-white rounded-lg border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700 ${
+                                    editForm.errors.phone ? 'border-red-400' : 'border-surface-border'
+                                }`}
+                            />
+                            {editForm.errors.phone && <p className="text-xs text-red-500 font-hanken">{editForm.errors.phone}</p>}
                         </div>
 
                         {/* Password Baru (opsional) */}
