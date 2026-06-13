@@ -115,20 +115,20 @@ export default function Dashboard() {
             <Head title="Dashboard" />
 
             {/* Header */}
-            <div className="flex items-end justify-between mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 md:mb-8">
                 <div>
-                    <h1 className="text-2xl font-hanken font-semibold text-primary-900 leading-8">
+                    <h1 className="text-xl md:text-2xl font-hanken font-semibold text-primary-900 leading-8">
                         Ringkasan Operasional
                     </h1>
-                    <p className="text-base font-hanken text-gray-600 mt-1">
+                    <p className="text-sm md:text-base font-hanken text-gray-600 mt-1">
                         Pantau status persuratan dan administrasi peternakan hari ini.
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button className="px-4 py-2 rounded-lg border border-primary-700 text-primary-700 text-xs font-mono font-medium tracking-wider hover:bg-primary-700 hover:text-white transition-colors">
+                <div className="flex items-center gap-2 md:gap-3">
+                    <button className="px-3 md:px-4 py-2 rounded-lg border border-primary-700 text-primary-700 text-xs font-mono font-medium tracking-wider hover:bg-primary-700 hover:text-white transition-colors">
                         Unduh Laporan
                     </button>
-                    <button className="px-4 py-2 rounded-lg bg-primary-700 text-white text-xs font-mono font-medium tracking-wider hover:bg-primary-800 transition-colors flex items-center gap-2">
+                    <button className="px-3 md:px-4 py-2 rounded-lg bg-primary-700 text-white text-xs font-mono font-medium tracking-wider hover:bg-primary-800 transition-colors flex items-center gap-2">
                         <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
                             <path d="M5.5 0V11M0 5.5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
@@ -138,21 +138,21 @@ export default function Dashboard() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
                 {stats.map((stat, index) => (
                     <StatCard key={index} {...stat} />
                 ))}
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-3 gap-8 mb-8">
-                {/* Document Table - 2 columns */}
-                <div className="col-span-2">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
+                {/* Document Table - 2 columns on desktop */}
+                <div className="lg:col-span-2">
                     <DocumentTable documents={documents} />
                 </div>
 
-                {/* Right Sidebar - 1 column */}
-                <div className="flex flex-col gap-8">
+                {/* Right Sidebar - 1 column on desktop */}
+                <div className="flex flex-col gap-6 md:gap-8">
                     <UrgentWarning warnings={urgentWarnings} />
                     <ActivityFeed activities={activities} />
                 </div>

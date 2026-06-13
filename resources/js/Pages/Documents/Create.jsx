@@ -67,8 +67,8 @@ export default function DocumentCreate() {
 
             <div className="max-w-[1024px] mx-auto">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-2xl font-hanken font-semibold text-primary-900 leading-8">
+                <div className="mb-6 md:mb-8">
+                    <h1 className="text-xl md:text-2xl font-hanken font-semibold text-primary-900 leading-8">
                         Input Dokumen Baru
                     </h1>
                     <p className="text-sm font-hanken text-gray-600 mt-1">
@@ -76,16 +76,16 @@ export default function DocumentCreate() {
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-6 md:gap-8">
                     {/* Top Section: Upload + Info Utama */}
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* File Upload */}
-                        <div className="bg-white shadow-sm rounded-xl border border-surface-border p-6">
+                        <div className="bg-white shadow-sm rounded-xl border border-surface-border p-4 md:p-6">
                             <label className="block text-xs font-mono font-medium text-gray-600 tracking-wider uppercase mb-4">
                                 SCAN / FOTO DOKUMEN
                             </label>
                             <div
-                                className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                                className={`border-2 border-dashed rounded-lg p-6 md:p-8 flex flex-col items-center justify-center cursor-pointer transition-colors ${
                                     isDragging
                                         ? 'border-primary-700 bg-primary-700/5'
                                         : 'border-surface-border hover:border-primary-700/50'
@@ -124,14 +124,14 @@ export default function DocumentCreate() {
                                     </div>
                                 ) : (
                                     <>
-                                        <svg className="w-11 h-8 text-primary-900 mb-4" viewBox="0 0 44 32" fill="none">
+                                        <svg className="w-11 h-8 text-primary-900 mb-3 md:mb-4" viewBox="0 0 44 32" fill="none">
                                             <path d="M22 20V4M22 4L14 12M22 4L30 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                                             <path d="M4 22V26C4 28.2091 5.79086 30 8 30H36C38.2091 30 40 28.2091 40 26V22" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
-                                        <p className="text-base font-hanken font-bold text-gray-900">
+                                        <p className="text-sm md:text-base font-hanken font-bold text-gray-900">
                                             Klik atau Seret File
                                         </p>
-                                        <p className="text-sm font-hanken text-gray-600 mt-2">
+                                        <p className="text-xs md:text-sm font-hanken text-gray-600 mt-1 md:mt-2">
                                             Format PDF, JPG, atau PNG (Maks. 10MB)
                                         </p>
                                     </>
@@ -215,8 +215,8 @@ export default function DocumentCreate() {
                     </div>
 
                     {/* Bottom Section: Pengirim + Tanggal */}
-                    <div className="bg-white shadow-sm rounded-xl border border-surface-border p-6">
-                        <div className="grid grid-cols-2 gap-8">
+                    <div className="bg-white shadow-sm rounded-xl border border-surface-border p-4 md:p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                             {/* Pengirim & Penugasan */}
                             <div>
                                 <label className="block text-xs font-mono font-medium text-gray-600 tracking-wider uppercase mb-4">
@@ -335,16 +335,16 @@ export default function DocumentCreate() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center justify-end gap-4 pb-8">
+                    <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pb-6 md:pb-8">
                         <Link
                             href="/documents"
-                            className="px-8 py-3 rounded-lg border border-primary-700 text-primary-700 text-base font-hanken font-bold hover:bg-primary-700 hover:text-white transition-colors"
+                            className="w-full sm:w-auto px-8 py-3 rounded-lg border border-primary-700 text-primary-700 text-sm md:text-base font-hanken font-bold hover:bg-primary-700 hover:text-white transition-colors text-center"
                         >
                             Batal
                         </Link>
                         <button
                             type="submit"
-                            className="px-8 py-3 rounded-lg bg-primary-700 shadow-md text-white text-base font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2"
+                            className="w-full sm:w-auto px-8 py-3 rounded-lg bg-primary-700 shadow-md text-white text-sm md:text-base font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center justify-center gap-2"
                         >
                             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                                 <path d="M14 6L7 13L4 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

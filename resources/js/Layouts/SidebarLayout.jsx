@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 
 const navigation = [
@@ -46,25 +46,59 @@ function SettingsIcon({ className }) {
     );
 }
 
+function LogoIcon() {
+    return (
+        <svg width="22" height="17" viewBox="0 0 22 17" fill="none">
+            <rect width="22" height="17" rx="2" fill="#173901" />
+            <rect x="3" y="4" width="16" height="2" rx="1" fill="#B9F38A" />
+            <rect x="3" y="8" width="16" height="2" rx="1" fill="#B9F38A" />
+            <rect x="3" y="12" width="10" height="2" rx="1" fill="#B9F38A" />
+        </svg>
+    );
+}
+
 export default function SidebarLayout({ children }) {
     const { auth } = usePage().props;
     const user = auth.user;
     const currentUrl = window.location.pathname;
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Close sidebar on route change
+    useEffect(() => {
+        setSidebarOpen(false);
+    }, [currentUrl]);
+
+    // Close sidebar on escape key
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') setSidebarOpen(false);
+        };
+        document.addEventListener('keydown', handleEscape);
+        return () => document.removeEventListener('keydown', handleEscape);
+    }, []);
 
     return (
         <div className="flex min-h-screen bg-[#F2F8EA]">
+            {/* Mobile Overlay */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="fixed inset-y-0 left-0 z-50 w-[220px] bg-gradient-to-b from-primary-900 to-primary-800 flex flex-col overflow-hidden">
+            <aside className={`
+                fixed inset-y-0 left-0 z-50 w-[220px] bg-gradient-to-b from-primary-900 to-primary-800 flex flex-col overflow-hidden
+                transition-transform duration-300 ease-in-out
+                md:translate-x-0
+                ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}>
                 {/* Logo */}
                 <div className="px-6 pt-6 pb-10">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center w-9 h-10 bg-accent-light rounded-lg">
-                            <svg width="22" height="17" viewBox="0 0 22 17" fill="none">
-                                <rect width="22" height="17" rx="2" fill="#173901" />
-                                <rect x="3" y="4" width="16" height="2" rx="1" fill="#B9F38A" />
-                                <rect x="3" y="8" width="16" height="2" rx="1" fill="#B9F38A" />
-                                <rect x="3" y="12" width="10" height="2" rx="1" fill="#B9F38A" />
-                            </svg>
+                            <LogoIcon />
                         </div>
                         <div>
                             <div className="text-white font-hanken font-bold text-xl leading-7">
@@ -120,23 +154,37 @@ export default function SidebarLayout({ children }) {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 ml-[220px] min-h-screen flex flex-col">
+            <main className="flex-1 md:ml-[220px] min-h-screen flex flex-col">
                 {/* Top Bar */}
-                <header className="sticky top-0 z-40 h-16 bg-[#FEF9F1] border-b border-surface-border flex items-center justify-between px-6">
-                    <div className="flex-1 max-w-[448px]">
-                        <div className="flex items-center gap-2 bg-surface rounded-full px-4 py-2.5">
-                            <svg className="w-[18px] h-[18px] text-gray-400 flex-shrink-0" viewBox="0 0 18 18" fill="none">
-                                <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-                                <path d="M12 12L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <header className="sticky top-0 z-30 h-16 bg-[#FEF9F1] border-b border-surface-border flex items-center justify-between px-4 md:px-6">
+                    <div className="flex items-center gap-3">
+                        {/* Mobile Hamburger Button */}
+                        <button
+                            onClick={() => setSidebarOpen(true)}
+                            className="flex items-center justify-center w-10 h-10 rounded-lg md:hidden hover:bg-surface transition-colors"
+                        >
+                            <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
+                                <path d="M1 1H19M1 8H19M1 15H19" stroke="#173901" strokeWidth="2" strokeLinecap="round"/>
                             </svg>
-                            <input
-                                type="text"
-                                placeholder="Cari nomor surat atau perihal..."
-                                className="w-full bg-transparent text-sm font-hanken text-gray-600 placeholder-gray-400 outline-none"
-                            />
+                        </button>
+
+                        {/* Search */}
+                        <div className="flex-1 max-w-[448px]">
+                            <div className="flex items-center gap-2 bg-surface rounded-full px-4 py-2.5">
+                                <svg className="w-[18px] h-[18px] text-gray-400 flex-shrink-0" viewBox="0 0 18 18" fill="none">
+                                    <circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+                                    <path d="M12 12L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                </svg>
+                                <input
+                                    type="text"
+                                    placeholder="Cari nomor surat atau perihal..."
+                                    className="w-full bg-transparent text-sm font-hanken text-gray-600 placeholder-gray-400 outline-none"
+                                />
+                            </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
+
+                    <div className="flex items-center gap-2 md:gap-4">
                         <button className="p-2 rounded-full hover:bg-surface transition-colors">
                             <svg className="w-5 h-5 text-primary-900" viewBox="0 0 20 20" fill="none">
                                 <path d="M15 7C15 4.23858 12.7614 2 10 2C7.23858 2 5 4.23858 5 7V10L3 13H17L15 10V7Z" stroke="currentColor" strokeWidth="1.5" />
@@ -154,7 +202,7 @@ export default function SidebarLayout({ children }) {
                 </header>
 
                 {/* Page Content */}
-                <div className="flex-1 p-6">
+                <div className="flex-1 p-4 md:p-6">
                     {children}
                 </div>
             </main>

@@ -5,6 +5,13 @@ const statusColors = {
     SELESAI: 'text-primary-700',
 };
 
+const statusBg = {
+    TERKIRIM: 'bg-accent',
+    PROSES: 'bg-[#FDF2D0]',
+    TERTUNDA: 'bg-[#FFDAD6]',
+    SELESAI: 'bg-accent',
+};
+
 const jenisColors = {
     EKSTERNAL: 'bg-[#F2EDE5]',
     LEGAL: 'bg-[#F2EDE5]',
@@ -17,14 +24,16 @@ export default function DocumentTable({ documents }) {
     return (
         <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-                <h2 className="text-xl font-hanken font-semibold text-primary-900">
+                <h2 className="text-lg md:text-xl font-hanken font-semibold text-primary-900">
                     Dokumen Terbaru
                 </h2>
                 <button className="text-xs font-mono font-medium text-primary-700 tracking-wider hover:underline">
                     Lihat Semua
                 </button>
             </div>
-            <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
+
+            {/* Desktop Table */}
+            <div className="hidden md:block bg-white rounded-xl border border-surface-border overflow-hidden">
                 <table className="w-full">
                     <thead>
                         <tr className="bg-table-header border-b border-surface-border">
@@ -68,6 +77,31 @@ export default function DocumentTable({ documents }) {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden flex flex-col gap-3">
+                {documents.map((doc) => (
+                    <div
+                        key={doc.nomor}
+                        className="bg-white rounded-xl border border-surface-border p-4 flex flex-col gap-2"
+                    >
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-hanken font-medium text-primary-900">
+                                {doc.nomor}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-hanken font-bold ${statusBg[doc.status]} ${statusColors[doc.status]}`}>
+                                {doc.status}
+                            </span>
+                        </div>
+                        <p className="text-sm font-hanken font-bold text-gray-900">
+                            {doc.perihal}
+                        </p>
+                        <span className={`inline-block self-start px-2 py-0.5 rounded text-[10px] font-hanken ${jenisColors[doc.jenis] || 'bg-gray-100'}`}>
+                            {doc.jenis}
+                        </span>
+                    </div>
+                ))}
             </div>
         </div>
     );
