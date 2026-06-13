@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: DashboardIcon },
@@ -267,22 +267,34 @@ export default function SidebarLayout({ children }) {
 
 
                 {/* User Info */}
-                <div className="px-6 py-5 border-t border-white/10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary-700 flex items-center justify-center">
+                <div className="px-4 py-4 border-t border-white/10">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary-700 flex items-center justify-center flex-shrink-0">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <circle cx="8" cy="5" r="3" fill="white" />
+                                    <path d="M2 14C2 11.2386 4.68629 9 8 9C11.3137 9 14 11.2386 14 14" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                                </svg>
+                            </div>
+                            <div className="min-w-0">
+                                <div className="text-white text-sm font-medium font-hanken truncate">
+                                    {user?.name || 'Admin GG Farm'}
+                                </div>
+                                <div className="text-accent-light/70 text-[10px] font-mono truncate">
+                                    Head of Logistics
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => router.post(route('logout'))}
+                            className="p-2 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
+                            title="Keluar"
+                        >
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <circle cx="8" cy="5" r="3" fill="white" />
-                                <path d="M2 14C2 11.2386 4.68629 9 8 9C11.3137 9 14 11.2386 14 14" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                                <path d="M6 14H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H6" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                                <path d="M11 8L14 8M14 8L11 5M14 8L11 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
-                        </div>
-                        <div>
-                            <div className="text-white text-sm font-medium font-hanken">
-                                {user?.name || 'Admin GG Farm'}
-                            </div>
-                            <div className="text-accent-light/70 text-[10px] font-mono">
-                                Head of Logistics
-                            </div>
-                        </div>
+                        </button>
                     </div>
                 </div>
             </aside>
