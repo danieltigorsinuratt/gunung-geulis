@@ -49,7 +49,7 @@ function ExcelIcon() {
     );
 }
 
-export default function DocumentShow({ document = {}, canReply = false, userDivisi = '' }) {
+export default function DocumentShow({ document = {}, replies = [], canReply = false, isSuperAdmin = false, userDivisi = '' }) {
     const isArchived = document.isArchived || false;
     const doc = {
         nomor: '',
@@ -103,12 +103,15 @@ export default function DocumentShow({ document = {}, canReply = false, userDivi
                     <div className="flex items-center gap-3">
                         {canReply && (
                             <>
-                                <button className="px-5 py-2.5 rounded-lg border border-primary-700 text-primary-700 text-sm font-hanken hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2">
+                                <Link
+                                    href={route('replies.create', doc.id)}
+                                    className="px-5 py-2.5 rounded-lg border border-primary-700 text-primary-700 text-sm font-hanken hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2"
+                                >
                                     <svg width="15" height="12" viewBox="0 0 15 12" fill="none">
                                         <path d="M1 6H11M11 6L7 2M11 6L7 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                     </svg>
                                     Balas
-                                </button>
+                                </Link>
                                 <button className="px-5 py-2.5 rounded-lg border border-primary-700 text-primary-700 text-sm font-hanken hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2">
                                     <svg width="17" height="11" viewBox="0 0 17 11" fill="none">
                                         <path d="M1 1H11L14 4V10C14 10.5523 13.5523 11 13 11H1C0.447715 11 0 10.5523 0 10V2C0 1.44772 0 1.44772 0 1 1Z" stroke="currentColor" strokeWidth="1.5"/>
@@ -211,7 +214,7 @@ export default function DocumentShow({ document = {}, canReply = false, userDivi
                                     <span className={`inline-flex self-start px-3 py-1 rounded-full text-xs font-hanken font-bold ${
                                         doc.status === 'Selesai' ? 'bg-accent text-primary-700' :
                                         doc.status === 'Pending' ? 'bg-[#FDF2D0] text-[#8B6914]' :
-                                        doc.status === 'Urgent' ? 'bg-[#FFDAD6] text-[#B91C1C]' :
+                                        doc.status === 'Diarsip' ? 'bg-gray-100 text-gray-500' :
                                         'bg-[#DBEAFE] text-[#1D4ED8]'
                                     }`}>
                                         {doc.status}
@@ -279,6 +282,35 @@ export default function DocumentShow({ document = {}, canReply = false, userDivi
                                 </div>
                             </div>
                         </div>
+
+                        {/* Info Tambahan */}
+                        <div className="flex flex-col gap-4">
+                            <div className="bg-white rounded-xl border border-surface-border p-4 flex items-center gap-3">
+                                <div className="w-10 h-10 bg-table-header rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg width="14" height="18" viewBox="0 0 16 20" fill="none">
+                                        <path d="M1 5C1 3.89543 1.89543 3 3 3H10L15 8V17C15 18.1046 14.1046 19 13 19H3C1.89543 19 1 18.1046 1 17V5Z" stroke="#173901" strokeWidth="1.5"/>
+                                        <path d="M10 3V8H15" stroke="#173901" strokeWidth="1.5"/>
+                                    </svg>
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-[10px] font-mono text-gray-400">DITUGASKAN KE</span>
+                                    <span className="text-sm font-hanken font-bold text-gray-900">{doc.lokasiArsip}</span>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-xl border border-surface-border p-4 flex items-center gap-3">
+                                <div className="w-10 h-10 bg-table-header rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg width="18" height="14" viewBox="0 0 20 16" fill="none">
+                                        <rect x="1" y="1" width="18" height="14" rx="2" stroke="#173901" strokeWidth="1.5"/>
+                                        <path d="M1 5H19" stroke="#173901" strokeWidth="1.5"/>
+                                        <path d="M7 9H13" stroke="#173901" strokeWidth="1.5" strokeLinecap="round"/>
+                                    </svg>
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-[10px] font-mono text-gray-400">DIBUAT OLEH</span>
+                                    <span className="text-sm font-hanken font-bold text-gray-900">{doc.createdBy}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Right Column */}
@@ -302,9 +334,8 @@ export default function DocumentShow({ document = {}, canReply = false, userDivi
                                 </div>
                                 {doc.file?.url && (
                                     <a
-                                        href={doc.file.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                        href={`${doc.file.url}?name=${encodeURIComponent(doc.nomor + '_' + doc.file.nama)}`}
+                                        download={`${doc.nomor}_${doc.file.nama}`}
                                         className="px-4 py-1.5 bg-primary-900 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2"
                                     >
                                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -376,45 +407,77 @@ export default function DocumentShow({ document = {}, canReply = false, userDivi
                             </div>
                         </div>
 
-                        {/* Bottom Info */}
-                        <div className="grid grid-cols-2 gap-6">
-                            {/* Divisi Tujuan */}
-                            <div className="bg-white rounded-xl border border-surface-border p-6 flex items-center gap-4">
-                                <div className="w-12 h-12 bg-table-header rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
-                                        <path d="M1 5C1 3.89543 1.89543 3 3 3H10L15 8V17C15 18.1046 14.1046 19 13 19H3C1.89543 19 1 18.1046 1 17V5Z" stroke="#173901" strokeWidth="1.5"/>
-                                        <path d="M10 3V8H15" stroke="#173901" strokeWidth="1.5"/>
-                                    </svg>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-xs font-mono text-gray-400">
-                                        DITUGASKAN KE
-                                    </span>
-                                    <span className="text-sm font-hanken font-bold text-gray-900">
-                                        {doc.lokasiArsip || '-'}
-                                    </span>
-                                </div>
+                        {/* Balasan */}
+                        {replies.length > 0 && (
+                            <div className="flex flex-col gap-4">
+                                <h3 className="text-lg font-hanken font-semibold text-primary-900">
+                                    Balasan ({replies.length})
+                                </h3>
+                                {replies.map((reply) => (
+                                    <div key={reply.id} className="bg-white rounded-xl border border-surface-border overflow-hidden">
+                                        {/* Header Balasan */}
+                                        <div className="px-5 py-3 bg-[#ECE8E0] border-b border-surface-border flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-primary-700 flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-white text-xs font-hanken font-bold">
+                                                        {reply.nama.charAt(0)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-hanken font-bold text-gray-900">{reply.nama}</span>
+                                                    <span className="text-[10px] font-mono text-gray-400">{reply.nomor_surat}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-hanken text-gray-400">{reply.waktu}</span>
+                                                {isSuperAdmin && (
+                                                    <button
+                                                        onClick={() => {
+                                                            if (confirm('Yakin ingin menghapus balasan ini?')) {
+                                                                router.delete(route('replies.destroy', [doc.id, reply.id]));
+                                                            }
+                                                        }}
+                                                        className="p-1 rounded hover:bg-[#FFDAD6] transition-colors"
+                                                        title="Hapus Balasan"
+                                                    >
+                                                        <svg width="14" height="14" viewBox="0 0 16 18" fill="none">
+                                                            <path d="M1 4H15M5.5 4V2.5C5.5 1.94772 5.94772 1.5 6.5 1.5H9.5C10.0523 1.5 10.5 1.94772 10.5 2.5V4M6.5 7V13M9.5 7V13M2.5 4L3.5 15.5C3.5 16.0523 3.94772 16.5 4.5 16.5H11.5C12.0523 16.5 12.5 16.0523 12.5 15.5L13.5 4" stroke="#BA1A1A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {/* Isi Balasan */}
+                                        <div className="px-5 pt-4 pb-2">
+                                            <p className="text-sm font-hanken text-gray-700 leading-6 whitespace-pre-wrap">
+                                                {reply.isi_balasan}
+                                            </p>
+                                        </div>
+                                        {/* Lampiran */}
+                                        {reply.file && (
+                                            <div className="px-5 pb-4">
+                                                <p className="text-xs font-mono text-gray-400 tracking-wider uppercase mb-1">Lampiran:</p>
+                                                <a
+                                                    href={reply.file.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-surface rounded-lg border border-surface-border hover:bg-surface/80 transition-colors"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                        <path d="M1 5C1 3.89543 1.89543 3 3 3H10L15 8V13C15 14.1046 14.1046 15 13 15H3C1.89543 15 1 14.1046 1 13V5Z" stroke="#173901" strokeWidth="1.5"/>
+                                                        <path d="M10 3V8H15" stroke="#173901" strokeWidth="1.5"/>
+                                                    </svg>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-hanken font-bold text-gray-900">{reply.file.nama}</span>
+                                                        <span className="text-[10px] font-hanken text-gray-400">{reply.file.ukuran}</span>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
-
-                            {/* Lokasi Arsip */}
-                            <div className="bg-white rounded-xl border border-surface-border p-6 flex items-center gap-4">
-                                <div className="w-12 h-12 bg-table-header rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
-                                        <rect x="1" y="1" width="18" height="14" rx="2" stroke="#173901" strokeWidth="1.5"/>
-                                        <path d="M1 5H19" stroke="#173901" strokeWidth="1.5"/>
-                                        <path d="M7 9H13" stroke="#173901" strokeWidth="1.5" strokeLinecap="round"/>
-                                    </svg>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-xs font-mono text-gray-400">
-                                        DIBUAT OLEH
-                                    </span>
-                                    <span className="text-sm font-hanken font-bold text-gray-900">
-                                        {doc.createdBy || '-'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>

@@ -7,8 +7,8 @@ import { useState } from 'react';
 const statusStyles = {
     Selesai: { bg: 'bg-accent', dot: 'bg-primary-700', text: 'text-primary-600' },
     Pending: { bg: 'bg-[#FDF2D0]', dot: 'bg-[#8B6914]', text: 'text-[#8B6914]' },
-    Urgent: { bg: 'bg-[#FFDAD6]', dot: 'bg-[#B91C1C]', text: 'text-[#B91C1C]' },
-    Proses: { bg: 'bg-[#DBEAFE]', dot: 'bg-[#1D4ED8]', text: 'text-[#1D4ED8]' },
+    Diarsip: { bg: 'bg-gray-100', dot: 'bg-gray-400', text: 'text-gray-500' },
+    Diproses: { bg: 'bg-[#DBEAFE]', dot: 'bg-[#1D4ED8]', text: 'text-[#1D4ED8]' },
 };
 
 function StatusBadge({ status }) {
@@ -143,10 +143,9 @@ export default function DocumentIndex({ documents = [], isSuperAdmin = false, us
                             className="w-full px-3 py-2 bg-white rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700"
                         >
                             <option value="">Semua Status</option>
-                            <option value="Selesai">Selesai</option>
                             <option value="Pending">Pending</option>
-                            <option value="Urgent">Urgent</option>
-                            <option value="Proses">Proses</option>
+                            <option value="Diproses">Diproses</option>
+                            <option value="Selesai">Selesai</option>
                         </select>
                     </div>
 
@@ -284,12 +283,29 @@ export default function DocumentIndex({ documents = [], isSuperAdmin = false, us
                                 >
                                     <EyeIcon />
                                 </Link>
-                                <button className="p-1.5 rounded hover:bg-surface transition-colors" title="Edit">
-                                    <EditIcon />
-                                </button>
-                                <button className="p-1.5 rounded hover:bg-surface transition-colors" title="Unduh">
-                                    <DownloadIcon />
-                                </button>
+                                {isSuperAdmin && (
+                                    <Link
+                                        href={`/documents/${doc.id}/edit`}
+                                        className="p-1.5 rounded hover:bg-surface transition-colors"
+                                        title="Edit"
+                                    >
+                                        <EditIcon />
+                                    </Link>
+                                )}
+                                {doc.file_url ? (
+                                    <a
+                                        href={`${doc.file_url}?name=${encodeURIComponent(doc.nomor + '_' + doc.file_name)}`}
+                                        download={`${doc.nomor}_${doc.file_name}`}
+                                        className="p-1.5 rounded hover:bg-surface transition-colors"
+                                        title="Unduh"
+                                    >
+                                        <DownloadIcon />
+                                    </a>
+                                ) : (
+                                    <span className="p-1.5 rounded opacity-30 cursor-not-allowed" title="Tidak ada file">
+                                        <DownloadIcon />
+                                    </span>
+                                )}
                                 {isSuperAdmin && (
                                     <button
                                         onClick={() => {

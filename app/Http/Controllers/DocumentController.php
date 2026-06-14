@@ -56,6 +56,8 @@ class DocumentController extends Controller
                 'masa_berlaku'      => $doc->masa_berlaku,
                 'file_path'         => $doc->file_path ? '/files/documents/' . $doc->file_path : null,
                 'file_original_name' => $doc->file_original_name,
+                'file_url'          => $doc->file_path ? '/files/documents/' . $doc->file_path : null,
+                'file_name'         => $doc->file_original_name,
                 'prioritas'         => $doc->prioritas,
                 'created_by'        => $doc->creator->name ?? '-',
                 'created_at'        => $doc->created_at->format('d/m/Y H:i'),
@@ -74,7 +76,7 @@ class DocumentController extends Controller
      */
     public function show(Request $request, string $id): Response
     {
-        $doc = Document::with('creator')->findOrFail($id);
+        $doc = Document::with(['creator', 'replies.creator'])->findOrFail($id);
         $user = $request->user();
         $isSuperAdmin = $user->role_type === 'superadmin';
         $canReply = $isSuperAdmin || $user->divisi === $doc->ditugaskan_ke;
@@ -108,7 +110,20 @@ class DocumentController extends Controller
                     ],
                 ],
             ],
+            'replies' => $doc->replies->map(fn($reply) => [
+                'id'         => $reply->id,
+                'nama'       => $reply->creator->name ?? '-',
+                'isi_balasan' => $reply->isi_balasan,
+                'nomor_surat' => $reply->nomor_surat,
+                'file' => $reply->file_path ? [
+                    'nama'   => $reply->file_original_name,
+                    'ukuran' => $reply->file_size ? round($reply->file_size / 1024, 1) . ' KB' : '-',
+                    'url'    => '/files/replies/' . $reply->file_path,
+                ] : null,
+                'waktu' => $reply->created_at->format('d/m/Y H:i'),
+            ]),
             'canReply'  => $canReply,
+            'isSuperAdmin' => $isSuperAdmin,
             'userDivisi' => $user->divisi,
         ]);
     }
@@ -181,6 +196,98 @@ class DocumentController extends Controller
     }
 
     /**
+     * Show the form for editing a document.
+     */
+    public function edit(Request $request, string $id): Response
+    {
+        $doc = Document::findOrFail($id);
+        $user = $request->user();
+
+        $users = \App\Models\User::select('id', 'name', 'divisi')
+            ->where('status', 'Active')
+            ->get()
+            ->groupBy('divisi')
+            ->map(function ($users) {
+                return $users->map(fn($u) => ['id' => $u->id, 'name' => $u->name])->values();
+            });
+
+        return Inertia::render('Documents/Edit', [
+            'document' => [
+                'id'             => $doc->id,
+                'nomor_surat'    => $doc->nomor_surat,
+                'perihal'        => $doc->perihal,
+                'jenis'          => $doc->jenis,
+                'instansi'       => $doc->instansi,
+                'penerima'       => $doc->pengirim,
+                'ditugaskan_ke'  => $doc->ditugaskan_ke,
+                'catatan'        => $doc->catatan,
+                'tanggal_dokumen' => $doc->tanggal_dokumen?->format('Y-m-d'),
+                'batas_waktu'    => $doc->batas_waktu?->format('Y-m-d\TH:i'),
+                'masa_berlaku'   => $doc->masa_berlaku,
+                'file_path'      => $doc->file_path,
+                'file_original_name' => $doc->file_original_name,
+            ],
+            'usersByDivisi' => $users,
+        ]);
+    }
+
+    /**
+     * Update a document.
+     */
+    public function update(Request $request, string $id): RedirectResponse
+    {
+        $doc = Document::findOrFail($id);
+
+        $validated = $request->validate([
+            'nomor_surat'   => ['required', 'string', 'max:255', \Illuminate\Validation\Rule::unique('documents', 'nomor_surat')->ignore($id)],
+            'perihal'       => ['required', 'string', 'max:255'],
+            'jenis'         => ['nullable', 'string', Rule::in(['surat-jalan', 'invois', 'laporan', 'izin', 'memo', 'kontrak', 'lainnya'])],
+            'jenis_lainnya' => ['required_if:jenis,lainnya', 'nullable', 'string', 'max:255'],
+            'instansi'      => ['nullable', 'string', 'max:255'],
+            'penerima'      => ['required', 'string', 'max:255'],
+            'ditugaskan_ke' => ['required', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris', 'Superadmin'])],
+            'catatan'       => ['nullable', 'string'],
+            'tanggal_dokumen' => ['nullable', 'date'],
+            'batas_waktu'   => ['nullable', 'date'],
+            'masa_berlaku'  => ['boolean'],
+            'file'          => ['nullable', 'file', 'mimes:pdf,xlsx,xls', 'max:15360'],
+        ]);
+
+        $updateData = [
+            'nomor_surat'     => $validated['nomor_surat'],
+            'perihal'         => $validated['perihal'],
+            'jenis'           => $validated['jenis'] === 'lainnya' ? ($validated['jenis_lainnya'] ?? null) : ($validated['jenis'] ?? null),
+            'instansi'        => $validated['instansi'] ?? null,
+            'pengirim'        => $validated['penerima'],
+            'ditugaskan_ke'   => $validated['ditugaskan_ke'],
+            'catatan'         => $validated['catatan'] ?? null,
+            'tanggal_dokumen' => $validated['tanggal_dokumen'] ?? null,
+            'batas_waktu'     => $validated['batas_waktu'] ?? null,
+            'masa_berlaku'    => $validated['masa_berlaku'] ?? false,
+        ];
+
+        // Update file jika ada
+        if ($request->hasFile('file')) {
+            // Hapus file lama
+            if ($doc->file_path) {
+                Storage::disk('public')->delete('documents/' . $doc->file_path);
+            }
+            $file = $request->file('file');
+            $filename = time() . '_' . $request->user()->id . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('documents', $filename, 'public');
+
+            $updateData['file_path'] = $filename;
+            $updateData['file_original_name'] = $file->getClientOriginalName();
+            $updateData['file_mime'] = $file->getMimeType();
+            $updateData['file_size'] = $file->getSize();
+        }
+
+        $doc->update($updateData);
+
+        return redirect()->route('documents.show', $id)->with('success', 'Dokumen berhasil diperbarui.');
+    }
+
+    /**
      * Archive a document.
      * Hanya divisi terkait + superadmin yang bisa arsip.
      */
@@ -195,7 +302,11 @@ class DocumentController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk mengarsipkan dokumen ini.');
         }
 
-        $doc->update(['archived_at' => now()]);
+        $doc->update([
+            'archived_at' => now(),
+            'status' => 'Diarsip',
+            'status_before_archive' => $doc->status,
+        ]);
 
         return redirect()->route('documents.index')->with('success', 'Dokumen berhasil diarsipkan.');
     }
@@ -213,7 +324,11 @@ class DocumentController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk mengembalikan dokumen ini.');
         }
 
-        $doc->update(['archived_at' => null]);
+        $doc->update([
+            'archived_at' => null,
+            'status' => $doc->status_before_archive ?? 'Pending',
+            'status_before_archive' => null,
+        ]);
 
         return redirect()->route('documents.archived')->with('success', 'Dokumen berhasil dikembalikan ke daftar dokumen.');
     }
@@ -240,6 +355,25 @@ class DocumentController extends Controller
         $doc->delete();
 
         return redirect()->route('documents.index')->with('success', 'Dokumen berhasil dihapus secara permanen.');
+    }
+
+    /**
+     * Update document status.
+     */
+    public function updateStatus(Request $request, string $id)
+    {
+        $doc = Document::findOrFail($id);
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', \Illuminate\Validation\Rule::in(['Pending', 'Diproses', 'Selesai', 'Diarsip'])],
+        ]);
+
+        $doc->update(['status' => $validated['status']]);
+
+        return response()->json([
+            'success' => true,
+            'status' => $doc->fresh()->status,
+        ]);
     }
 
     /**
@@ -271,9 +405,22 @@ class DocumentController extends Controller
             ];
         });
 
+        // Dokumen yang belum diarsipkan (bisa dipilih untuk diarsipkan)
+        $availableQuery = Document::whereNull('archived_at');
+        if (!$isSuperAdmin) {
+            $availableQuery->where('ditugaskan_ke', $user->divisi);
+        }
+        $availableDocuments = $availableQuery->orderBy('created_at', 'desc')->get()->map(fn($doc) => [
+            'id'     => $doc->id,
+            'nomor'  => $doc->nomor_surat,
+            'perihal' => $doc->perihal,
+            'status' => $doc->status,
+        ]);
+
         return Inertia::render('Documents/Archived', [
-            'documents'    => $documents,
-            'isSuperAdmin' => $isSuperAdmin,
+            'documents'           => $documents,
+            'availableDocuments'  => $availableDocuments,
+            'isSuperAdmin'        => $isSuperAdmin,
         ]);
     }
 
@@ -287,6 +434,7 @@ class DocumentController extends Controller
 
         $query = Document::with('creator');
 
+        // Superadmin: export semua, Admin: export divisi sendiri
         if (!$isSuperAdmin) {
             $query->where('ditugaskan_ke', $user->divisi);
         }
@@ -300,54 +448,71 @@ class DocumentController extends Controller
 
         $documents = $query->orderBy('created_at', 'desc')->get();
 
-        $filename = 'laporan_dokumen_' . now()->format('Y-m-d_His') . '.csv';
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        // Style header
+        $headerStyle = [
+            'font' => ['bold' => true, 'size' => 11],
+            'alignment' => ['horizontal' => 'center', 'vertical' => 'center'],
+            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '173901']],
+            'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
+            'borders' => [
+                'allBorders' => ['borderStyle' => 'thin', 'color' => ['rgb' => '000000']],
+            ],
         ];
 
-        $callback = function () use ($documents) {
-            $file = fopen('php://output', 'w');
+        // Header
+        $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        $headers = ['No', 'Tanggal', 'Nama Dokumen', 'Nomor Dokumen', 'Jenis Laporan', 'Divisi', 'Status', 'File Dokumen'];
+        foreach ($headers as $col => $header) {
+            $sheet->setCellValue($cols[$col] . '1', $header);
+            $sheet->getStyle($cols[$col] . '1')->applyFromArray($headerStyle);
+        }
 
-            // Header CSV
-            fputcsv($file, [
-                'No',
-                'Nomor Surat',
-                'Perihal',
-                'Jenis',
-                'Pengirim',
-                'Ditugaskan Ke',
-                'Status',
-                'Prioritas',
-                'Tanggal Dokumen',
-                'Batas Waktu',
-                'Dibuat Oleh',
-                'Tanggal Input',
-            ]);
-
-            // Data
-            $no = 1;
-            foreach ($documents as $doc) {
-                fputcsv($file, [
-                    $no++,
-                    $doc->nomor_surat,
-                    $doc->perihal,
-                    $doc->jenis ?? '-',
-                    $doc->pengirim ?? '-',
-                    $doc->ditugaskan_ke,
-                    $doc->status,
-                    $doc->prioritas,
-                    $doc->tanggal_dokumen?->format('d/m/Y') ?? '-',
-                    $doc->batas_waktu?->format('d/m/Y H:i') ?? '-',
-                    $doc->creator->name ?? '-',
-                    $doc->created_at->format('d/m/Y H:i'),
-                ]);
+        // Data
+        $no = 1;
+        foreach ($documents as $doc) {
+            $row = $no + 1;
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('B' . $row, $doc->created_at->format('d/m/Y'));
+            $sheet->setCellValue('C' . $row, $doc->perihal);
+            $sheet->setCellValue('D' . $row, $doc->nomor_surat);
+            $sheet->setCellValue('E' . $row, $doc->jenis ?? '-');
+            $sheet->setCellValue('F' . $row, $doc->ditugaskan_ke);
+            $sheet->setCellValue('G' . $row, $doc->status);
+            if ($doc->file_path) {
+                $fileUrl = url('/files/documents/' . $doc->file_path);
+                $sheet->setCellValue('H' . $row, $doc->file_original_name ?? 'Lihat File');
+                $sheet->getHyperlink('H' . $row)->setUrl($fileUrl);
+                $sheet->getStyle('H' . $row)->getFont()->setUnderline('single');
+                $sheet->getStyle('H' . $row)->getFont()->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('1D4ED8'));
+            } else {
+                $sheet->setCellValue('H' . $row, '-');
             }
+        }
 
-            fclose($file);
-        };
+        // Auto-width
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
 
-        return response()->stream($callback, 200, $headers);
+        // Border untuk semua cell
+        $lastRow = $sheet->getHighestRow();
+        $sheet->getStyle("A1:H{$lastRow}")->applyFromArray([
+            'borders' => [
+                'allBorders' => ['borderStyle' => 'thin', 'color' => ['rgb' => 'CCCCCC']],
+            ],
+        ]);
+
+        $filename = 'laporan_dokumen_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $tempFile = tempnam(sys_get_temp_dir(), 'laporan_');
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
     }
 }

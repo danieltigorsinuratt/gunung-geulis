@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
@@ -14,9 +16,8 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', DashboardController::class)
+    ->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/documents', [DocumentController::class, 'index'])
     ->middleware(['auth', 'verified'])->name('documents.index');
@@ -30,6 +31,12 @@ Route::get('/create', [DocumentController::class, 'create'])
 Route::post('/create', [DocumentController::class, 'store'])
     ->middleware(['auth', 'verified'])->name('documents.store');
 
+Route::get('/documents/{id}/edit', [DocumentController::class, 'edit'])
+    ->middleware(['auth', 'verified'])->name('documents.edit');
+
+Route::put('/documents/{id}', [DocumentController::class, 'update'])
+    ->middleware(['auth', 'verified'])->name('documents.update');
+
 Route::post('/documents/{id}/archive', [DocumentController::class, 'archive'])
     ->middleware(['auth', 'verified'])->name('documents.archive');
 
@@ -38,6 +45,19 @@ Route::post('/documents/{id}/restore', [DocumentController::class, 'restore'])
 
 Route::delete('/documents/{id}', [DocumentController::class, 'destroy'])
     ->middleware(['auth', 'verified'])->name('documents.destroy');
+
+Route::patch('/documents/{id}/status', [DocumentController::class, 'updateStatus'])
+    ->middleware(['auth', 'verified'])->name('documents.updateStatus');
+
+// Replies
+Route::get('/documents/{documentId}/reply', [ReplyController::class, 'create'])
+    ->middleware(['auth', 'verified'])->name('replies.create');
+
+Route::post('/documents/{documentId}/reply', [ReplyController::class, 'store'])
+    ->middleware(['auth', 'verified'])->name('replies.store');
+
+Route::delete('/documents/{documentId}/replies/{replyId}', [ReplyController::class, 'destroy'])
+    ->middleware(['auth', 'verified'])->name('replies.destroy');
 
 Route::get('/documents-arsip', [DocumentController::class, 'archived'])
     ->middleware(['auth', 'verified'])->name('documents.archived');
@@ -53,9 +73,10 @@ Route::get('/files/{path}', function ($path) {
     }
     $mime = mime_content_type($fullPath);
     $size = filesize($fullPath);
+    $filename = request()->query('name', basename($path));
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . $size);
-    header('Content-Disposition: inline; filename="' . basename($path) . '"');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
     readfile($fullPath);
     exit;
 })->where('path', '.*');

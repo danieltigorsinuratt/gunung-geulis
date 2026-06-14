@@ -1,11 +1,13 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+import Modal from '@/Components/Modal';
 
 const statusStyles = {
     Selesai: { bg: 'bg-accent', dot: 'bg-primary-700', text: 'text-primary-600' },
     Pending: { bg: 'bg-[#FDF2D0]', dot: 'bg-[#8B6914]', text: 'text-[#8B6914]' },
-    Urgent: { bg: 'bg-[#FFDAD6]', dot: 'bg-[#B91C1C]', text: 'text-[#B91C1C]' },
-    Proses: { bg: 'bg-[#DBEAFE]', dot: 'bg-[#1D4ED8]', text: 'text-[#1D4ED8]' },
+    Diarsip: { bg: 'bg-gray-100', dot: 'bg-gray-400', text: 'text-gray-500' },
+    Diproses: { bg: 'bg-[#DBEAFE]', dot: 'bg-[#1D4ED8]', text: 'text-[#1D4ED8]' },
 };
 
 function StatusBadge({ status }) {
@@ -27,7 +29,17 @@ function EyeIcon() {
     );
 }
 
-export default function DocumentArchived({ documents = [], isSuperAdmin = false }) {
+export default function DocumentArchived({ documents = [], availableDocuments = [], isSuperAdmin = false }) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleArchive = (docId) => {
+        if (confirm('Yakin ingin mengarsipkan dokumen ini?')) {
+            router.post(route('documents.archive', docId), {}, {
+                onSuccess: () => setIsModalOpen(false),
+            });
+        }
+    };
+
     return (
         <SidebarLayout>
             <Head title="Arsip Dokumen" />
@@ -43,15 +55,15 @@ export default function DocumentArchived({ documents = [], isSuperAdmin = false 
                             Dokumen yang sudah selesai diproses dan diarsipkan.
                         </p>
                     </div>
-                    <Link
-                        href="/documents"
-                        className="px-4 py-2 rounded-lg border border-primary-700 text-primary-700 text-sm font-hanken font-bold hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2"
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="px-4 py-2 rounded-lg bg-primary-700 shadow-sm text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2"
                     >
-                        <svg width="15" height="12" viewBox="0 0 15 12" fill="none">
-                            <path d="M14 6H1M1 6L6 1M1 6L6 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                            <path d="M5.5 0V11M0 5.5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
-                        Kembali ke Daftar Dokumen
-                    </Link>
+                        Arsipkan Dokumen
+                    </button>
                 </div>
 
                 {/* Document Table - Desktop */}
@@ -97,7 +109,7 @@ export default function DocumentArchived({ documents = [], isSuperAdmin = false 
                                     <div className="w-[140px] px-4 py-5 text-xs font-hanken text-gray-500">
                                         {doc.archived_at}
                                     </div>
-                                    <div className="w-[80px] px-4 py-5 flex items-center justify-center">
+                                    <div className="w-[80px] px-4 py-5 flex items-center justify-center gap-1">
                                         <Link
                                             href={`/documents/${doc.id}`}
                                             className="p-1.5 rounded hover:bg-surface transition-colors"
@@ -105,6 +117,20 @@ export default function DocumentArchived({ documents = [], isSuperAdmin = false 
                                         >
                                             <EyeIcon />
                                         </Link>
+                                        <button
+                                            onClick={() => {
+                                                if (confirm('Yakin ingin mengeluarkan dokumen ini dari arsip?')) {
+                                                    router.post(route('documents.restore', doc.id));
+                                                }
+                                            }}
+                                            className="p-1.5 rounded hover:bg-surface transition-colors"
+                                            title="Keluarkan dari Arsip"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                <path d="M2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8" stroke="#173901" strokeWidth="1.5" strokeLinecap="round"/>
+                                                <path d="M8 10V5M8 5L5.5 7.5M8 5L10.5 7.5" stroke="#173901" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
                             ))
@@ -120,23 +146,83 @@ export default function DocumentArchived({ documents = [], isSuperAdmin = false 
                         </div>
                     ) : (
                         documents.map((doc) => (
-                            <Link
+                            <div
                                 key={doc.id}
-                                href={`/documents/${doc.id}`}
-                                className="bg-white shadow-sm rounded-xl border border-surface-border p-4 flex flex-col gap-2 hover:bg-surface/30 transition-colors"
+                                className="bg-white shadow-sm rounded-xl border border-surface-border p-4 flex flex-col gap-2"
                             >
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-hanken font-medium text-primary-900">{doc.nomor}</span>
+                                    <Link href={`/documents/${doc.id}`} className="text-xs font-hanken font-medium text-primary-900">
+                                        {doc.nomor}
+                                    </Link>
                                     <StatusBadge status={doc.status} />
                                 </div>
-                                <p className="text-sm font-hanken font-bold text-gray-900">{doc.perihal}</p>
+                                <Link href={`/documents/${doc.id}`} className="text-sm font-hanken font-bold text-gray-900">
+                                    {doc.perihal}
+                                </Link>
                                 <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-hanken text-gray-400">Diarsipkan: {doc.archived_at}</span>
+                                    <button
+                                        onClick={() => {
+                                            if (confirm('Keluarkan dari arsip?')) {
+                                                router.post(route('documents.restore', doc.id));
+                                            }
+                                        }}
+                                        className="text-xs font-hanken font-bold text-primary-700 hover:underline"
+                                    >
+                                        Keluarkan
+                                    </button>
                                 </div>
-                            </Link>
+                            </div>
                         ))
                     )}
                 </div>
+
+                {/* Modal Arsipkan Dokumen */}
+                <Modal show={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="lg">
+                    <div className="p-6 bg-[#F8F3EB]">
+                        <h2 className="text-lg font-hanken font-bold text-primary-900 mb-4">
+                            Arsipkan Dokumen
+                        </h2>
+                        <p className="text-sm font-hanken text-gray-600 mb-4">
+                            Pilih dokumen yang ingin diarsipkan:
+                        </p>
+
+                        {availableDocuments.length === 0 ? (
+                            <div className="p-8 text-center text-sm font-hanken text-gray-500 bg-white rounded-lg border border-surface-border">
+                                Semua dokumen sudah diarsipkan.
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
+                                {availableDocuments.map((doc) => (
+                                    <div
+                                        key={doc.id}
+                                        className="flex items-center justify-between p-3 bg-white rounded-lg border border-surface-border hover:border-primary-700 transition-colors"
+                                    >
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="text-sm font-hanken font-bold text-gray-900">{doc.perihal}</span>
+                                            <span className="text-xs font-mono text-gray-400">#{doc.nomor} · {doc.status}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleArchive(doc.id)}
+                                            className="px-4 py-2 bg-[#8B6914] hover:bg-[#7A5C10] text-white text-xs font-hanken font-bold rounded-lg transition-colors"
+                                        >
+                                            Arsipkan
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex justify-end mt-4">
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="px-4 py-2 text-sm font-hanken font-bold text-gray-600 hover:text-gray-900 transition-colors"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
             </div>
         </SidebarLayout>
     );

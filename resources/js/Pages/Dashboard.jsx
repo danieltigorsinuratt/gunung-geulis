@@ -1,10 +1,9 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import StatCard from '@/Components/Dashboard/StatCard';
 import DocumentTable from '@/Components/Dashboard/DocumentTable';
 import UrgentWarning from '@/Components/Dashboard/UrgentWarning';
 import ActivityFeed from '@/Components/Dashboard/ActivityFeed';
-import Banner from '@/Components/Dashboard/Banner';
 
 export default function Dashboard({
     totalDocuments = 0,
@@ -13,7 +12,9 @@ export default function Dashboard({
     todayActivities = 0,
     documents = [],
     urgentWarnings = [],
-    activities = []
+    activities = [],
+    selectedDivisi = '',
+    isSuperAdmin = false,
 }) {
     const stats = [
         {
@@ -71,9 +72,27 @@ export default function Dashboard({
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 md:mb-8">
                 <div>
-                    <h1 className="text-xl md:text-2xl font-hanken font-semibold text-primary-900 leading-8">
-                        Ringkasan Operasional
-                    </h1>
+                    <div className="flex items-center gap-3 mb-2">
+                        {isSuperAdmin && (
+                            <Link
+                                href={route('dashboard')}
+                                className="p-1.5 rounded-lg hover:bg-surface transition-colors"
+                                title="Kembali ke Pilih Divisi"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <path d="M12 4L6 10L12 16" stroke="#173901" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </Link>
+                        )}
+                        <h1 className="text-xl md:text-2xl font-hanken font-semibold text-primary-900 leading-8">
+                            Ringkasan Operasional
+                        </h1>
+                        {selectedDivisi && (
+                            <span className="px-3 py-1 bg-primary-700 text-white text-xs font-mono font-bold rounded-full">
+                                {selectedDivisi}
+                            </span>
+                        )}
+                    </div>
                     <p className="text-sm md:text-base font-hanken text-gray-600 mt-1">
                         Pantau status persuratan dan administrasi peternakan hari ini.
                     </p>
@@ -112,9 +131,6 @@ export default function Dashboard({
             <div className="mb-6 md:mb-8">
                 <DocumentTable documents={documents} />
             </div>
-
-            {/* Banner */}
-            <Banner />
         </SidebarLayout>
     );
 }
