@@ -1,5 +1,5 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
 const statusStyles = {
@@ -126,25 +126,37 @@ export default function ApprovalIndex({ approvals = [], stats = {} }) {
                                             </div>
                                         </div>
 
-                                        {item.status === 'pending' && (
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => handleApprove(item.documentId)}
-                                                    className="px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-lg text-sm font-hanken font-bold transition-colors flex items-center gap-2"
-                                                >
-                                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                                        <path d="M2 7L5.5 10.5L12 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                    </svg>
-                                                    Setuju
-                                                </button>
-                                                <button
-                                                    onClick={() => setSelectedDocId(item.documentId)}
-                                                    className="px-4 py-2 border border-[#B91C1C] text-[#B91C1C] hover:bg-[#B91C1C] hover:text-white rounded-lg text-sm font-hanken font-bold transition-colors"
-                                                >
-                                                    Tolak
-                                                </button>
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-2">
+                                            <Link
+                                                href={`/documents/${item.documentId}`}
+                                                className="px-3 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                                                title="Lihat Dokumen"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    <circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round"/>
+                                                </svg>
+                                            </Link>
+                                            {item.status === 'pending' && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleApprove(item.documentId)}
+                                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                                                    >
+                                                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                                            <path d="M2 7L5.5 10.5L12 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        </svg>
+                                                        Setuju
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setSelectedDocId(item.documentId)}
+                                                        className="px-4 py-2 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white rounded-lg text-sm font-medium transition-colors"
+                                                    >
+                                                        Tolak
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             );

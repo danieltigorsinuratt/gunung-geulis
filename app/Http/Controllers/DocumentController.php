@@ -14,15 +14,16 @@ class DocumentController extends Controller
 {
     /**
      * Display a listing of documents.
-     * Semua user: lihat semua dokumen
-     * Superadmin: bisa filter semua divisi
+     * Hanya dokumen approved/rejected yang tampil di daftar.
+     * Pending hanya tampil di dashboard.
      */
     public function index(Request $request): Response
     {
         $user = $request->user();
         $isSuperAdmin = $user->role_type === 'superadmin';
 
-        $query = Document::with('creator')->whereNull('archived_at');
+        $query = Document::with('creator')->whereNull('archived_at')
+            ->whereIn('status', ['approved', 'rejected']);
 
         // Filter by divisi (lokasi) - hanya superadmin
         if ($isSuperAdmin && $request->filled('divisi')) {
@@ -39,15 +40,21 @@ class DocumentController extends Controller
             $query->where('jenis', $request->jenis);
         }
 
-        $documents = $query->orderBy('created_at', 'desc')->get()->map(function ($doc) {
+        $documents = $query->with('approvals')->orderBy('created_at', 'desc')->get()->map(function ($doc) {
+            // Get rejection notes if status is rejected
+            $rejectionNotes = null;
+            if ($doc->status === 'rejected') {
+                $rejectedApproval = $doc->approvals->where('status', 'rejected')->first();
+                $rejectionNotes = $rejectedApproval?->notes;
+            }
+
             return [
                 'id'                => $doc->id,
                 'nomor'             => $doc->nomor_surat,
                 'perihal'           => $doc->perihal,
-                'jenis'             => strtoupper($doc->jenis ?? '-'),
+                'jenis'             => $doc->jenis ?? '-',
                 'status'            => $doc->status,
                 'tanggal'           => $doc->tanggal_dokumen?->format('d/m/Y') ?? '-',
-                'lokasi'            => $doc->ditugaskan_ke,
                 'ditugaskan_ke'     => $doc->ditugaskan_ke,
                 'pengirim'          => $doc->pengirim ?? '-',
                 'instansi'          => $doc->instansi ?? '-',
@@ -61,6 +68,7 @@ class DocumentController extends Controller
                 'prioritas'         => $doc->prioritas,
                 'created_by'        => $doc->creator->name ?? '-',
                 'created_at'        => $doc->created_at->format('d/m/Y H:i'),
+                'rejection_notes'   => $rejectionNotes,
             ];
         });
 
@@ -79,9 +87,9 @@ class DocumentController extends Controller
         $doc = Document::with(['creator', 'replies.creator', 'approvals.approver', 'dispositions.fromUser', 'dispositions.toUser'])->findOrFail($id);
         $user = $request->user();
         $isSuperAdmin = $user->role_type === 'superadmin';
-        $isManajer = $user->role_type === 'manajer';
-        $canReply = $isSuperAdmin || $isManajer || $user->divisi === $doc->ditugaskan_ke;
-        $canApprove = $isSuperAdmin || $isManajer;
+        $isManager = $user->role_type === 'manager';
+        $canReply = $isSuperAdmin || $isManager || $user->divisi === $doc->ditugaskan_ke;
+        $canApprove = $isSuperAdmin || $isManager;
 
         return Inertia::render('Documents/Show', [
             'document' => [
@@ -141,7 +149,7 @@ class DocumentController extends Controller
             ]),
             'canReply'  => $canReply,
             'isSuperAdmin' => $isSuperAdmin,
-            'isManajer' => $isManajer,
+            'isManager' => $isManager,
             'canApprove' => $canApprove,
             'userDivisi' => $user->divisi,
             'users' => \App\Models\User::where('role_type', '!=', 'superadmin')->get()->map(fn($u) => [
@@ -175,20 +183,27 @@ class DocumentController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $jenisDokumen = $request->input('jenis_dokumen');
+
         $validated = $request->validate([
-            'nomor_surat'   => ['required', 'string', 'max:255', 'unique:documents,nomor_surat'],
-            'perihal'       => ['required', 'string', 'max:255'],
-            'jenis'         => ['nullable', 'string', Rule::in(['surat-jalan', 'invois', 'laporan', 'izin', 'memo', 'kontrak', 'lainnya'])],
-            'jenis_lainnya' => ['required_if:jenis,lainnya', 'nullable', 'string', 'max:255'],
-            'instansi'      => ['nullable', 'string', 'max:255'],
-            'penerima'      => ['required', 'string', 'max:255'],
-            'ditugaskan_ke' => ['required', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris', 'Superadmin'])],
-            'catatan'       => ['nullable', 'string'],
-            'tanggal_dokumen' => ['nullable', 'date'],
-            'batas_waktu'   => ['nullable', 'date'],
-            'masa_berlaku'  => ['boolean'],
-            'file'          => ['required', 'file', 'mimes:pdf,xlsx,xls', 'max:15360'],
+            'perihal'         => ['required', 'string', 'max:255'],
+            'jenis_dokumen'   => ['required', 'string', Rule::in(['masuk', 'keluar', 'internal', 'keputusan'])],
+            'kategori'        => ['required', 'string', Rule::in(['surat-jalan', 'invois', 'laporan', 'izin', 'memo', 'kontrak', 'lainnya'])],
+            'kategori_lainnya'=> ['required_if:kategori,lainnya', 'nullable', 'string', 'max:255'],
+            'prioritas'       => ['nullable', 'string', Rule::in(['NORMAL', 'TINGGI', 'URGENT'])],
+            'tanggal_dokumen' => ['required', 'date'],
+            'batas_waktu'     => ['nullable', 'date'],
+            'masa_berlaku'    => ['boolean'],
+            'pengirim'        => ['nullable', 'string', 'max:255'],
+            'kepada'          => ['nullable', 'string', 'max:255'],
+            'instansi'        => ['nullable', 'string', 'max:255'],
+            'ditugaskan_ke'   => [$jenisDokumen === 'internal' ? 'required' : 'nullable', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris'])],
+            'catatan'         => ['nullable', 'string'],
+            'file'            => ['required', 'file', 'mimes:pdf,xlsx,xls', 'max:15360'],
         ]);
+
+        // Generate nomor surat otomatis
+        $nomorSurat = 'DRAFT-' . strtoupper(substr($validated['jenis_dokumen'], 0, 3)) . '-' . date('Ymd') . '-' . strtoupper(uniqid());
 
         // Simpan file upload
         $file = $request->file('file');
@@ -196,13 +211,18 @@ class DocumentController extends Controller
         $file->storeAs('documents', $filename, 'public');
 
         // Simpan data dokumen
-        Document::create([
-            'nomor_surat'       => $validated['nomor_surat'],
+        // For masuk/keputusan, use user's divisi as default
+        $ditugaskanKe = $validated['ditugaskan_ke'] ?? $request->user()->divisi;
+
+        $document = Document::create([
+            'nomor_surat'       => $nomorSurat,
             'perihal'           => $validated['perihal'],
-            'jenis'             => $validated['jenis'] === 'lainnya' ? ($validated['jenis_lainnya'] ?? null) : ($validated['jenis'] ?? null),
+            'jenis'             => $validated['jenis_dokumen'],
+            'kategori'          => $validated['kategori'] === 'lainnya' ? ($validated['kategori_lainnya'] ?? null) : ($validated['kategori'] ?? null),
             'instansi'          => $validated['instansi'] ?? null,
-            'pengirim'          => $validated['penerima'],
-            'ditugaskan_ke'     => $validated['ditugaskan_ke'],
+            'pengirim'          => $validated['pengirim'] ?? null,
+            'kepada'            => $validated['kepada'] ?? null,
+            'ditugaskan_ke'     => $ditugaskanKe,
             'catatan'           => $validated['catatan'] ?? null,
             'tanggal_dokumen'   => $validated['tanggal_dokumen'] ?? null,
             'batas_waktu'       => $validated['batas_waktu'] ?? null,
@@ -211,12 +231,30 @@ class DocumentController extends Controller
             'file_original_name' => $file->getClientOriginalName(),
             'file_mime'         => $file->getMimeType(),
             'file_size'         => $file->getSize(),
-            'status'            => 'Pending',
-            'prioritas'         => 'NORMAL',
+            'status'            => 'pending',
+            'prioritas'         => $validated['prioritas'] ?? 'NORMAL',
             'created_by'        => $request->user()->id,
         ]);
 
-        return redirect()->route('documents.index')->with('success', 'Dokumen berhasil disimpan dan dikirim ke ' . $validated['ditugaskan_ke'] . '.');
+        // Auto-create approval records for all managers
+        $managers = \App\Models\User::where('role_type', 'manager')->get();
+        foreach ($managers as $manager) {
+            \App\Models\Approval::create([
+                'document_id' => $document->id,
+                'approver_id' => $manager->id,
+                'status' => 'pending',
+            ]);
+
+            \App\Models\Notification::create([
+                'user_id' => $manager->id,
+                'type' => 'approval_submitted',
+                'title' => 'Surat Menunggu Approval',
+                'message' => "Surat {$document->nomor_surat} - {$document->perihal} menunggu persetujuan Anda.",
+                'link' => "/documents/{$document->id}",
+            ]);
+        }
+
+        return redirect()->route('documents.index')->with('success', 'Dokumen berhasil disimpan dan menunggu approval.');
     }
 
     /**

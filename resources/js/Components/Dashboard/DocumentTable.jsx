@@ -1,91 +1,43 @@
-import { useState, useEffect } from 'react';
-import { router } from '@inertiajs/react';
-import axios from 'axios';
-
-const statusColors = {
-    Pending: 'text-[#8B6914]',
-    Diproses: 'text-[#1D4ED8]',
-    Selesai: 'text-primary-700',
-    Diarsip: 'text-gray-500',
+const statusStyles = {
+    pending: { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Pending' },
+    approved: { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Approved' },
+    rejected: { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500', label: 'Rejected' },
+    // Legacy
+    Pending: { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Pending' },
+    Selesai: { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Approved' },
+    Diproses: { bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500', label: 'Diproses' },
+    Diarsip: { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400', label: 'Diarsip' },
 };
 
-const statusBg = {
-    Pending: 'bg-[#FDF2D0]',
-    Diproses: 'bg-[#DBEAFE]',
-    Selesai: 'bg-accent',
-    Diarsip: 'bg-gray-100',
-};
-
-const jenisColors = {
-    EKSTERNAL: 'bg-[#F2EDE5]',
-    LEGAL: 'bg-[#F2EDE5]',
-    FINANCIAL: 'bg-[#F2EDE5]',
-    INTERNAL: 'bg-[#F2EDE5]',
-    OPERASIONAL: 'bg-[#F2EDE5]',
-};
-
-function StatusDropdown({ status, documentId }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [currentStatus, setCurrentStatus] = useState(status);
-
-    // Sync state dengan props saat status berubah dari backend
-    useEffect(() => {
-        setCurrentStatus(status);
-    }, [status]);
-
-    const statuses = ['Pending', 'Diproses', 'Selesai'];
-
-    const handleStatusChange = (newStatus) => {
-        if (newStatus === currentStatus) {
-            setIsOpen(false);
-            return;
-        }
-        setCurrentStatus(newStatus);
-        setIsOpen(false);
-
-        axios.patch(route('documents.updateStatus', documentId), {
-            status: newStatus,
-        }).then((response) => {
-            if (response.data.success) {
-                setCurrentStatus(response.data.status);
-            }
-        }).catch((error) => {
-            console.error('Gagal update status:', error);
-            setCurrentStatus(status); // Kembali ke status awal
-        });
-    };
-
+function StatusBadge({ status }) {
+    const style = statusStyles[status] || { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400', label: status };
     return (
-        <div className="relative">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-hanken font-bold cursor-pointer hover:opacity-80 transition-opacity ${statusBg[currentStatus]} ${statusColors[currentStatus]}`}
-            >
-                {currentStatus}
-                <svg className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} viewBox="0 0 12 12" fill="none">
-                    <path d="M3 5L6 8L9 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-            </button>
-            {isOpen && (
-                <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-                    <div className="absolute top-full left-0 mt-1 z-50 bg-white rounded-lg border border-surface-border shadow-lg min-w-[120px]" style={{ overflow: 'visible' }}>
-                        {statuses.map((s) => (
-                            <button
-                                key={s}
-                                onClick={() => handleStatusChange(s)}
-                                className={`w-full px-3 py-2 text-left text-xs font-hanken font-bold hover:bg-surface transition-colors flex items-center gap-2 ${
-                                    s === currentStatus ? 'bg-surface/50' : ''
-                                }`}
-                            >
-                                <span className={`w-2 h-2 rounded-full ${statusBg[s]}`} />
-                                {s}
-                            </button>
-                        ))}
-                    </div>
-                </>
-            )}
-        </div>
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${style.bg} ${style.text}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+            {style.label}
+        </span>
+    );
+}
+
+const jenisBadgeStyles = {
+    masuk: 'bg-blue-100 text-blue-700',
+    keluar: 'bg-purple-100 text-purple-700',
+    internal: 'bg-indigo-100 text-indigo-700',
+    keputusan: 'bg-orange-100 text-orange-700',
+};
+
+function JenisBadge({ jenis }) {
+    const style = jenisBadgeStyles[jenis?.toLowerCase()] || 'bg-gray-100 text-gray-600';
+    const labels = {
+        masuk: 'Masuk',
+        keluar: 'Keluar',
+        internal: 'Internal',
+        keputusan: 'Keputusan',
+    };
+    return (
+        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${style}`}>
+            {labels[jenis?.toLowerCase()] || jenis || '-'}
+        </span>
     );
 }
 
@@ -93,61 +45,64 @@ export default function DocumentTable({ documents }) {
     return (
         <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-                <h2 className="text-lg md:text-xl font-hanken font-semibold text-primary-900">
+                <h2 className="text-lg md:text-xl font-bold text-gray-900">
                     Dokumen
                 </h2>
-                <a href={route('documents.index')} className="text-xs font-mono font-medium text-primary-700 tracking-wider hover:underline">
+                <a href="/documents" className="text-sm font-medium text-blue-600 hover:underline">
                     Lihat Semua
                 </a>
             </div>
 
             {/* Desktop Table */}
-            <div className="hidden md:block bg-white rounded-xl border border-surface-border mb-8" style={{ overflow: 'visible' }}>
+            <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <table className="w-full">
                     <thead>
-                        <tr className="bg-table-header border-b border-surface-border">
-                            <th className="px-6 py-4 text-left text-xs font-mono font-medium uppercase tracking-wider text-gray-800">
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                 NOMOR SURAT
                             </th>
-                            <th className="px-6 py-4 text-left text-xs font-mono font-medium uppercase tracking-wider text-gray-800">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                 PERIHAL
                             </th>
-                            <th className="px-6 py-4 text-left text-xs font-mono font-medium uppercase tracking-wider text-gray-800">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                 JENIS
                             </th>
-                            <th className="px-6 py-4 text-left text-xs font-mono font-medium uppercase tracking-wider text-gray-800">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                 STATUS
                             </th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-100">
                         {documents.length === 0 ? (
                             <tr>
-                                <td colSpan="4" className="px-6 py-12 text-center text-sm font-hanken text-gray-500">
+                                <td colSpan="4" className="px-6 py-12 text-center text-sm text-gray-500">
                                     Belum ada dokumen terbaru.
                                 </td>
                             </tr>
                         ) : (
                             documents.map((doc, index) => (
                                 <tr
-                                    key={doc.nomor}
-                                    className={`border-b border-surface-border/30 ${
-                                        index % 2 === 1 ? 'bg-surface/5' : ''
-                                    } hover:bg-surface/10 transition-colors`}
+                                    key={doc.id || index}
+                                    className={`hover:bg-gray-50 transition-colors ${
+                                        index % 2 === 1 ? 'bg-gray-50/50' : ''
+                                    }`}
                                 >
-                                    <td className="px-6 py-4 text-sm font-hanken font-medium text-gray-900">
+                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
                                         {doc.nomor}
                                     </td>
-                                    <td className="px-6 py-4 text-sm font-hanken text-gray-900">
+                                    <td className="px-6 py-4 text-sm text-gray-700">
                                         {doc.perihal}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-hanken ${jenisColors[doc.jenis] || 'bg-gray-100'}`}>
-                                            {doc.jenis}
-                                        </span>
+                                        <JenisBadge jenis={doc.jenis} />
                                     </td>
                                     <td className="px-6 py-4">
-                                        <StatusDropdown status={doc.status} documentId={doc.id} />
+                                        <StatusBadge status={doc.status} />
+                                        {doc.status === 'rejected' && doc.rejection_notes && (
+                                            <p className="text-[10px] text-red-500 mt-1 max-w-[150px] line-clamp-2" title={doc.rejection_notes}>
+                                                {doc.rejection_notes}
+                                            </p>
+                                        )}
                                     </td>
                                 </tr>
                             ))
@@ -156,29 +111,33 @@ export default function DocumentTable({ documents }) {
                 </table>
             </div>
 
+            {/* Mobile Cards */}
             <div className="md:hidden flex flex-col gap-3">
                 {documents.length === 0 ? (
-                    <div className="bg-white rounded-xl border border-surface-border p-6 text-center text-sm font-hanken text-gray-500">
+                    <div className="bg-white rounded-xl border border-gray-200 p-6 text-center text-sm text-gray-500">
                         Belum ada dokumen terbaru.
                     </div>
                 ) : (
-                    documents.map((doc) => (
+                    documents.map((doc, index) => (
                         <div
-                            key={doc.nomor}
-                            className="bg-white rounded-xl border border-surface-border p-4 flex flex-col gap-2"
+                            key={doc.id || index}
+                            className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-2"
                         >
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-hanken font-medium text-primary-900">
+                                <span className="text-sm font-medium text-gray-900">
                                     {doc.nomor}
                                 </span>
-                                <StatusDropdown status={doc.status} documentId={doc.id} />
+                                <StatusBadge status={doc.status} />
                             </div>
-                            <p className="text-sm font-hanken font-bold text-gray-900">
+                            <p className="text-sm text-gray-700">
                                 {doc.perihal}
                             </p>
-                            <span className={`inline-block self-start px-2 py-0.5 rounded text-[10px] font-hanken ${jenisColors[doc.jenis] || 'bg-gray-100'}`}>
-                                {doc.jenis}
-                            </span>
+                            <JenisBadge jenis={doc.jenis} />
+                            {doc.status === 'rejected' && doc.rejection_notes && (
+                                <p className="text-[10px] text-red-500 mt-1 line-clamp-2" title={doc.rejection_notes}>
+                                    Alasan: {doc.rejection_notes}
+                                </p>
+                            )}
                         </div>
                     ))
                 )}

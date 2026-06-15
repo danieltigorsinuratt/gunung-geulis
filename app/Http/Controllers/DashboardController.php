@@ -14,11 +14,12 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $isSuperAdmin = $user->role_type === 'superadmin';
+        $isManager = $user->role_type === 'manager';
         $selectedDivisi = $request->query('divisi');
 
         // Superadmin tanpa divisi dipilih → tampilkan halaman pilih divisi
         if ($isSuperAdmin && !$selectedDivisi) {
-            $divisions = ['Tim Logistik', 'Tim Legal', 'Sekretaris', 'Superadmin'];
+            $divisions = ['Tim Logistik', 'Tim Legal', 'Sekretaris'];
 
             $divisionStats = collect($divisions)->map(function ($divisi) {
                 $total = Document::where('ditugaskan_ke', $divisi)->count();
@@ -44,7 +45,7 @@ class DashboardController extends Controller
             ]);
         }
 
-        // Base query: semua dokumen (termasuk diarsip) untuk dashboard
+        // Base query: semua dokumen untuk dashboard
         $baseQuery = Document::query();
         if ($isSuperAdmin && $selectedDivisi) {
             $baseQuery->where('ditugaskan_ke', $selectedDivisi);
@@ -52,98 +53,95 @@ class DashboardController extends Controller
             $baseQuery->where('ditugaskan_ke', $user->divisi);
         }
 
-        // 1. Total Dokumen
-        $totalDocuments = (clone $baseQuery)->count();
+        // 1. Total Dokumen (approved & rejected saja, pending tidak dihitung)
+        $totalDocuments = (clone $baseQuery)->whereIn('status', ['approved', 'rejected'])->count();
 
-        // 2. Belum Dibalas (status Pending)
-        $unansweredDocuments = (clone $baseQuery)->where('status', 'Pending')->count();
+        // 2. Dokumen Disetujui
+        $approvedDocuments = (clone $baseQuery)->where('status', 'approved')->count();
 
-        // 3. Segera Kedaluwarsa (kecuali selesai & diarsip)
+        // 3. Dokumen Ditolak
+        $rejectedDocuments = (clone $baseQuery)->where('status', 'rejected')->count();
+
+        // 4. Dokumen Urgent (prioritas URGENT atau segera kedaluwarsa)
         $urgentDocuments = (clone $baseQuery)
-            ->whereNotIn('status', ['Selesai', 'Diarsip'])
             ->where(function ($q) {
-                $q->where(function ($q2) {
-                    $q2->whereNotNull('batas_waktu')
-                       ->where('batas_waktu', '<=', now()->addDays(3))
-                       ->where('batas_waktu', '>=', now());
-                });
-                $q->orWhere(function ($q2) {
-                    $q2->where('masa_berlaku', true)
-                       ->where(function ($q3) {
-                           $q3->whereNull('batas_waktu')
-                              ->orWhere('batas_waktu', '>=', now());
-                       });
-                });
+                $q->where('prioritas', 'URGENT')
+                  ->orWhere(function ($q2) {
+                      $q2->whereNotNull('batas_waktu')
+                         ->where('batas_waktu', '<=', now()->addDays(3))
+                         ->where('batas_waktu', '>=', now());
+                  });
             })
             ->count();
 
-        // 4. Aktivitas Hari Ini
-        $todayActivities = (clone $baseQuery)->whereDate('created_at', today())->count();
-
         // 5. Dokumen (max 10)
         $documents = (clone $baseQuery)
-            ->with('creator')
+            ->with(['creator', 'approvals'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get()
-            ->map(fn($doc) => [
-                'id'         => $doc->id,
-                'nomor'      => $doc->nomor_surat,
-                'perihal'    => $doc->perihal,
-                'jenis'      => strtoupper($doc->jenis ?? '-'),
-                'status'     => $doc->status,
-                'file_url'   => $doc->file_path ? '/files/documents/' . $doc->file_path : null,
-                'file_name'  => $doc->file_original_name,
-            ]);
-
-        // 6. Peringatan Urgent
-        $urgentWarnings = (clone $baseQuery)
-            ->whereNotIn('status', ['Selesai', 'Diarsip'])
-            ->where(function ($q) {
-                $q->where(function ($q2) {
-                    $q2->whereNotNull('batas_waktu')
-                       ->where('batas_waktu', '<=', now()->addDays(3))
-                       ->where('batas_waktu', '>=', now());
-                });
-                $q->orWhere(function ($q2) {
-                    $q2->where('masa_berlaku', true)
-                       ->where(function ($q3) {
-                           $q3->whereNull('batas_waktu')
-                              ->orWhere('batas_waktu', '>=', now());
-                       });
-                });
-            })
-            ->orderBy('batas_waktu', 'asc')
-            ->limit(5)
-            ->get()
             ->map(function ($doc) {
-                $daysLeft = $doc->batas_waktu ? max(0, (int) now()->diffInDays($doc->batas_waktu, false)) : null;
-
-                if ($daysLeft !== null) {
-                    $badge = $daysLeft === 0 ? 'HARI INI' : 'KEDALUWARSA ' . $daysLeft . ' HARI';
-                } else {
-                    $badge = $doc->masa_berlaku ? 'MASA BERLAKU' : 'DEADLINE';
+                // Get rejection notes if status is rejected
+                $rejectionNotes = null;
+                if ($doc->status === 'rejected') {
+                    $rejectedApproval = $doc->approvals->where('status', 'rejected')->first();
+                    $rejectionNotes = $rejectedApproval?->notes;
                 }
 
-                $jenisLabel = match($doc->jenis) {
-                    'surat-jalan' => 'Surat jalan',
-                    'invois' => 'Invois',
-                    'laporan' => 'Laporan',
-                    'izin' => 'Dokumen izin',
-                    'memo' => 'Memo',
-                    'kontrak' => 'Kontrak',
-                    default => 'Dokumen',
-                };
-                $description = $jenisLabel . ' nomor #' . $doc->nomor_surat . ' segera habis masa berlakunya.';
-
                 return [
-                    'id'          => $doc->id,
+                    'id'              => $doc->id,
+                    'nomor'           => $doc->nomor_surat,
+                    'perihal'         => $doc->perihal,
+                    'jenis'           => strtolower($doc->jenis ?? '-'),
+                    'status'          => $doc->status,
+                    'file_url'        => $doc->file_path ? '/files/documents/' . $doc->file_path : null,
+                    'file_name'       => $doc->file_original_name,
+                    'rejection_notes' => $rejectionNotes,
+                ];
+            });
+
+        // 6. Peringatan Urgent (hanya untuk manager)
+        $urgentWarnings = [];
+        if ($user->role_type === 'manager' || $isSuperAdmin) {
+            $urgentWarnings = (clone $baseQuery)
+                ->where(function ($q) {
+                    $q->where('prioritas', 'URGENT')
+                      ->orWhere(function ($q2) {
+                          $q2->whereNotNull('batas_waktu')
+                             ->where('batas_waktu', '<=', now()->addDays(3))
+                             ->where('batas_waktu', '>=', now());
+                      });
+                })
+                ->orderBy('batas_waktu', 'asc')
+                ->limit(5)
+                ->get()
+                ->map(function ($doc) {
+                    $daysLeft = $doc->batas_waktu ? max(0, (int) now()->diffInDays($doc->batas_waktu, false)) : null;
+
+                    if ($daysLeft !== null) {
+                        $badge = $daysLeft === 0 ? 'HARI INI' : 'KEDALUWARSA ' . $daysLeft . ' HARI';
+                    } else {
+                        $badge = $doc->masa_berlaku ? 'MASA BERLAKU' : 'DEADLINE';
+                    }
+
+                    $jenisLabel = match($doc->jenis) {
+                        'masuk' => 'Surat Masuk',
+                        'keluar' => 'Surat Keluar',
+                        'internal' => 'Surat Internal',
+                        'keputusan' => 'Surat Keputusan',
+                        default => 'Dokumen',
+                    };
+                    $description = $jenisLabel . ' nomor #' . $doc->nomor_surat . ' membutuhkan perhatian.';
+
+                    return [
+                        'id'          => $doc->id,
                     'title'       => $doc->perihal,
                     'description' => $description,
                     'badge'       => $badge,
                     'color'       => $daysLeft !== null && $daysLeft <= 1 ? 'red' : 'amber',
                 ];
             });
+        }
 
         // 7. Aktivitas Terbaru — semua aktivitas hari ini (termasuk arsip)
         $allDocsToday = Document::where(function ($q) use ($baseQuery) {
@@ -189,14 +187,15 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'totalDocuments'      => $totalDocuments,
-            'unansweredDocuments' => $unansweredDocuments,
+            'approvedDocuments'   => $approvedDocuments,
+            'rejectedDocuments'   => $rejectedDocuments,
             'urgentDocuments'     => $urgentDocuments,
-            'todayActivities'     => $todayActivities,
             'documents'           => $documents,
             'urgentWarnings'      => $urgentWarnings,
             'activities'          => $activities,
             'selectedDivisi'      => $selectedDivisi ?? $user->divisi,
             'isSuperAdmin'        => $isSuperAdmin,
+            'userRole'            => $user->role_type,
         ]);
     }
 }

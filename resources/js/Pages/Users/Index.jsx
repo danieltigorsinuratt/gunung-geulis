@@ -37,12 +37,12 @@ export default function UsersIndex({ users = [] }) {
 
     const addForm = useForm({
         name: '', email: '', password: '', phone: '',
-        divisi: 'Tim Logistik', jabatan: '', role_type: 'staff', status: 'Active',
+        divisi: 'Tim Logistik', jabatan: '', role_type: 'admin', status: 'Active',
     });
 
     const editForm = useForm({
         name: '', email: '', password: '', phone: '',
-        divisi: 'Tim Logistik', jabatan: '', role_type: 'staff', status: 'Active',
+        divisi: 'Tim Logistik', jabatan: '', role_type: 'admin', status: 'Active',
     });
 
     const deleteForm = useForm({});
@@ -181,8 +181,8 @@ export default function UsersIndex({ users = [] }) {
                                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-hanken font-bold ${divisiColors[user.divisi] || 'bg-gray-100'}`}>{user.divisi || '-'}</span>
                                 </div>
                                 <div className="w-[120px] px-4 py-4">
-                                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-mono font-medium ${user.role_type === 'superadmin' ? 'bg-[#F3E8FF] text-[#6B21A8]' : user.role_type === 'manajer' ? 'bg-[#FEF3C7] text-[#92400E]' : 'bg-gray-100 text-gray-600'}`}>
-                                        {user.role_type === 'superadmin' ? 'Superadmin' : user.role_type === 'manajer' ? 'Manajer' : 'Staff'}
+                                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-mono font-medium ${user.role_type === 'superadmin' ? 'bg-[#F3E8FF] text-[#6B21A8]' : user.role_type === 'manager' ? 'bg-[#FEF3C7] text-[#92400E]' : 'bg-gray-100 text-gray-600'}`}>
+                                        {user.role_type === 'superadmin' ? 'Superadmin' : user.role_type === 'manager' ? 'Manager' : 'Admin'}
                                     </span>
                                 </div>
                                 <div className="w-[140px] px-4 py-4 text-sm font-hanken text-gray-900">{user.role || '-'}</div>
@@ -193,7 +193,7 @@ export default function UsersIndex({ users = [] }) {
                                     </div>
                                 </div>
                                 <div className="w-[120px] px-4 py-4 flex items-center justify-end gap-1">
-                                    <button onClick={() => { setSelectedUser(user); editForm.setData({ name: user.nama, email: user.email, password: '', phone: user.phone || '', divisi: user.divisi || 'Tim Logistik', jabatan: user.role, role_type: user.role_type || 'staff', status: user.status }); setIsEditOpen(true); }} className="p-1 rounded hover:bg-surface text-[#8B6914] transition-colors" title="Edit">
+                                    <button onClick={() => { setSelectedUser(user); editForm.setData({ name: user.nama, email: user.email, password: '', phone: user.phone || '', divisi: user.divisi || 'Tim Logistik', jabatan: user.role, role_type: user.role_type || 'admin', status: user.status }); setIsEditOpen(true); }} className="p-1 rounded hover:bg-surface text-[#8B6914] transition-colors" title="Edit">
                                         <svg width="15" height="15" viewBox="0 0 17 17" fill="none"><path d="M12.5 0L14.5 2L5 11.5H3V9.5L12.5 0ZM0 14H17V17H0V14Z" fill="currentColor"/></svg>
                                     </button>
                                     <button onClick={() => { setSelectedUser(user); setIsDeleteOpen(true); }} className="p-1 rounded hover:bg-surface text-[#BA1A1A] transition-colors" title="Hapus">
@@ -220,7 +220,7 @@ export default function UsersIndex({ users = [] }) {
                                 <div className="flex items-center justify-between ml-13">
                                     <span className="text-xs font-hanken text-gray-500">{user.role} · {user.role_type}</span>
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => { setSelectedUser(user); editForm.setData({ name: user.nama, email: user.email, password: '', phone: user.phone || '', divisi: user.divisi || 'Tim Logistik', jabatan: user.role, role_type: user.role_type || 'staff', status: user.status }); setIsEditOpen(true); }} className="text-[#8B6914] text-xs font-hanken font-bold hover:underline">Edit</button>
+                                        <button onClick={() => { setSelectedUser(user); editForm.setData({ name: user.nama, email: user.email, password: '', phone: user.phone || '', divisi: user.divisi || 'Tim Logistik', jabatan: user.role, role_type: user.role_type || 'admin', status: user.status }); setIsEditOpen(true); }} className="text-[#8B6914] text-xs font-hanken font-bold hover:underline">Edit</button>
                                         <span className="text-gray-300">|</span>
                                         <button onClick={() => { setSelectedUser(user); setIsDeleteOpen(true); }} className="text-[#BA1A1A] text-xs font-hanken font-bold hover:underline">Hapus</button>
                                     </div>
@@ -260,8 +260,8 @@ export default function UsersIndex({ users = [] }) {
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-hanken font-bold text-gray-900">Role</label>
                                 <select value={addForm.data.role_type} onChange={(e) => addForm.setData('role_type', e.target.value)} className="w-full px-4 py-2.5 bg-white rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700">
-                                    <option value="staff">Staff</option>
-                                    <option value="manajer">Manajer</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="manager">Manager</option>
                                     <option value="superadmin">Superadmin</option>
                                 </select>
                             </div>
@@ -321,8 +321,8 @@ export default function UsersIndex({ users = [] }) {
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-hanken font-bold text-gray-900">Role</label>
                                 <select value={editForm.data.role_type} onChange={(e) => editForm.setData('role_type', e.target.value)} className="w-full px-4 py-2.5 bg-white rounded-lg border border-surface-border text-sm font-hanken text-gray-900 outline-none focus:ring-2 focus:ring-primary-700">
-                                    <option value="staff">Staff</option>
-                                    <option value="manajer">Manajer</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="manager">Manager</option>
                                     <option value="superadmin">Superadmin</option>
                                 </select>
                             </div>

@@ -49,8 +49,11 @@ function ExcelIcon() {
     );
 }
 
-export default function DocumentShow({ document = {}, replies = [], canReply = false, isSuperAdmin = false, userDivisi = '' }) {
+export default function DocumentShow({ document = {}, replies = [], canReply = false, isSuperAdmin = false, isManager = false, canApprove = false, userDivisi = '' }) {
     const isArchived = document.isArchived || false;
+    const [rejectNotes, setRejectNotes] = useState('');
+    const [showRejectModal, setShowRejectModal] = useState(false);
+
     const doc = {
         nomor: '',
         judul: '',
@@ -77,7 +80,7 @@ export default function DocumentShow({ document = {}, replies = [], canReply = f
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                         <Link
-                            href="/documents"
+                            href={isManager ? "/approval" : "/documents"}
                             className="p-2 rounded-full hover:bg-surface transition-colors"
                         >
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -101,7 +104,35 @@ export default function DocumentShow({ document = {}, replies = [], canReply = f
                         </h2>
                     </div>
                     <div className="flex items-center gap-3">
-                        {canReply && (
+                        {/* Manager: Approve/Reject buttons */}
+                        {canApprove && doc.status === 'pending' && (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        if (confirm('Yakin ingin menyetujui dokumen ini?')) {
+                                            router.post(`/documents/${doc.id}/approve`, {}, {
+                                                onSuccess: () => router.visit('/approval'),
+                                            });
+                                        }
+                                    }}
+                                    className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors flex items-center gap-2"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                        <path d="M2 7L5.5 10.5L12 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                    Setuju
+                                </button>
+                                <button
+                                    onClick={() => setShowRejectModal(true)}
+                                    className="px-5 py-2.5 rounded-lg border border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-sm font-medium transition-colors"
+                                >
+                                    Tolak
+                                </button>
+                            </>
+                        )}
+
+                        {/* Admin: Reply & Archive buttons */}
+                        {canReply && !isManager && (
                             <>
                                 <Link
                                     href={route('replies.create', doc.id)}
@@ -112,19 +143,12 @@ export default function DocumentShow({ document = {}, replies = [], canReply = f
                                     </svg>
                                     Balas
                                 </Link>
-                                <button className="px-5 py-2.5 rounded-lg border border-primary-700 text-primary-700 text-sm font-hanken hover:bg-primary-700 hover:text-white transition-colors flex items-center gap-2">
-                                    <svg width="17" height="11" viewBox="0 0 17 11" fill="none">
-                                        <path d="M1 1H11L14 4V10C14 10.5523 13.5523 11 13 11H1C0.447715 11 0 10.5523 0 10V2C0 1.44772 0 1.44772 0 1 1Z" stroke="currentColor" strokeWidth="1.5"/>
-                                        <path d="M11 1V4H14" stroke="currentColor" strokeWidth="1.5"/>
-                                    </svg>
-                                    Buat Surat Terkait
-                                </button>
                                 <button
                                     onClick={() => {
                                         if (isArchived) {
                                             if (confirm('Yakin ingin mengembalikan dokumen ini ke daftar dokumen?')) {
                                                 router.post(`/documents/${doc.id}/restore`, {}, {
-                                                    onSuccess: () => router.visit('/documents-arsip'),
+                                                    onSuccess: () => router.visit('/documents'),
                                                 });
                                             }
                                         } else {
@@ -285,18 +309,21 @@ export default function DocumentShow({ document = {}, replies = [], canReply = f
 
                         {/* Info Tambahan */}
                         <div className="flex flex-col gap-4">
-                            <div className="bg-white rounded-xl border border-surface-border p-4 flex items-center gap-3">
-                                <div className="w-10 h-10 bg-table-header rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg width="14" height="18" viewBox="0 0 16 20" fill="none">
-                                        <path d="M1 5C1 3.89543 1.89543 3 3 3H10L15 8V17C15 18.1046 14.1046 19 13 19H3C1.89543 19 1 18.1046 1 17V5Z" stroke="#173901" strokeWidth="1.5"/>
-                                        <path d="M10 3V8H15" stroke="#173901" strokeWidth="1.5"/>
-                                    </svg>
+                            {/* Ditugaskan Ke - hanya untuk Surat Internal */}
+                            {doc.kategori === 'internal' && (
+                                <div className="bg-white rounded-xl border border-surface-border p-4 flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-table-header rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <svg width="14" height="18" viewBox="0 0 16 20" fill="none">
+                                            <path d="M1 5C1 3.89543 1.89543 3 3 3H10L15 8V17C15 18.1046 14.1046 19 13 19H3C1.89543 19 1 18.1046 1 17V5Z" stroke="#173901" strokeWidth="1.5"/>
+                                            <path d="M10 3V8H15" stroke="#173901" strokeWidth="1.5"/>
+                                        </svg>
+                                    </div>
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="text-[10px] font-mono text-gray-400">DITUGASKAN KE</span>
+                                        <span className="text-sm font-hanken font-bold text-gray-900">{doc.lokasiArsip}</span>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-mono text-gray-400">DITUGASKAN KE</span>
-                                    <span className="text-sm font-hanken font-bold text-gray-900">{doc.lokasiArsip}</span>
-                                </div>
-                            </div>
+                            )}
                             <div className="bg-white rounded-xl border border-surface-border p-4 flex items-center gap-3">
                                 <div className="w-10 h-10 bg-table-header rounded-lg flex items-center justify-center flex-shrink-0">
                                     <svg width="18" height="14" viewBox="0 0 20 16" fill="none">
@@ -334,7 +361,7 @@ export default function DocumentShow({ document = {}, replies = [], canReply = f
                                 </div>
                                 {doc.file?.url && (
                                     <a
-                                        href={`${doc.file.url}?name=${encodeURIComponent(doc.nomor + '_' + doc.file.nama)}`}
+                                        href={`${doc.file.url}?name=${encodeURIComponent(doc.nomor + '_' + doc.file.nama)}&download=true`}
                                         download={`${doc.nomor}_${doc.file.nama}`}
                                         className="px-4 py-1.5 bg-primary-900 rounded-lg text-white text-sm font-hanken font-bold hover:bg-primary-800 transition-colors flex items-center gap-2"
                                     >
@@ -481,6 +508,49 @@ export default function DocumentShow({ document = {}, replies = [], canReply = f
                     </div>
                 </div>
             </div>
+
+            {/* Reject Modal */}
+            {showRejectModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md">
+                        <h3 className="text-lg font-bold text-red-600 mb-2">Tolak Dokumen</h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                            Berikan alasan penolakan untuk dokumen ini.
+                        </p>
+                        <textarea
+                            value={rejectNotes}
+                            onChange={(e) => setRejectNotes(e.target.value)}
+                            placeholder="Tulis catatan penolakan..."
+                            rows={4}
+                            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                        />
+                        <div className="flex justify-end gap-3 mt-4">
+                            <button
+                                onClick={() => { setShowRejectModal(false); setRejectNotes(''); }}
+                                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (!rejectNotes.trim()) {
+                                        alert('Catatan penolakan harus diisi');
+                                        return;
+                                    }
+                                    router.post(`/documents/${doc.id}/reject`, {
+                                        notes: rejectNotes,
+                                    }, {
+                                        onSuccess: () => router.visit('/approval'),
+                                    });
+                                }}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                            >
+                                Tolak Dokumen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </SidebarLayout>
     );
 }

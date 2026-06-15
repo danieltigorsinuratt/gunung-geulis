@@ -17,13 +17,14 @@ class UserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', Password::min(8)],
-            'phone'    => ['nullable', 'string', 'max:20'],
-            'divisi'   => ['required', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris', 'Superadmin'])],
-            'jabatan'  => ['required', 'string', 'max:255'],
-            'status'   => ['sometimes', Rule::in(['Active', 'Inactive'])],
+            'name'      => ['required', 'string', 'max:255'],
+            'email'     => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password'  => ['required', Password::min(8)],
+            'phone'     => ['nullable', 'string', 'max:20'],
+            'divisi'    => ['required', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris'])],
+            'jabatan'   => ['required', 'string', 'max:255'],
+            'role_type' => ['required', 'string', Rule::in(['admin', 'manager', 'superadmin'])],
+            'status'    => ['sometimes', Rule::in(['Active', 'Inactive'])],
         ]);
 
         User::create([
@@ -34,10 +35,10 @@ class UserController extends Controller
             'divisi'    => $validated['divisi'],
             'jabatan'   => $validated['jabatan'],
             'status'    => $validated['status'] ?? 'Active',
-            'role_type' => 'admin',
+            'role_type' => $validated['role_type'],
         ]);
 
-        return redirect()->route('settings')->with('success', 'User berhasil ditambahkan.');
+        return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan.');
     }
 
     /**
@@ -46,22 +47,24 @@ class UserController extends Controller
     public function update(Request $request, User $user): RedirectResponse
     {
         $validated = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => ['nullable', Password::min(8)],
-            'phone'    => ['nullable', 'string', 'max:20'],
-            'divisi'   => ['required', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris', 'Superadmin'])],
-            'jabatan'  => ['required', 'string', 'max:255'],
-            'status'   => ['required', Rule::in(['Active', 'Inactive'])],
+            'name'      => ['required', 'string', 'max:255'],
+            'email'     => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'password'  => ['nullable', Password::min(8)],
+            'phone'     => ['nullable', 'string', 'max:20'],
+            'divisi'    => ['required', 'string', Rule::in(['Tim Logistik', 'Tim Legal', 'Sekretaris'])],
+            'jabatan'   => ['required', 'string', 'max:255'],
+            'role_type' => ['required', 'string', Rule::in(['admin', 'manager', 'superadmin'])],
+            'status'    => ['required', Rule::in(['Active', 'Inactive'])],
         ]);
 
         $updateData = [
-            'name'    => $validated['name'],
-            'email'   => $validated['email'],
-            'phone'   => $validated['phone'] ?? null,
-            'divisi'  => $validated['divisi'],
-            'jabatan' => $validated['jabatan'],
-            'status'  => $validated['status'],
+            'name'      => $validated['name'],
+            'email'     => $validated['email'],
+            'phone'     => $validated['phone'] ?? null,
+            'divisi'    => $validated['divisi'],
+            'jabatan'   => $validated['jabatan'],
+            'role_type' => $validated['role_type'],
+            'status'    => $validated['status'],
         ];
 
         // Only update password if a new one was provided
@@ -71,7 +74,7 @@ class UserController extends Controller
 
         $user->update($updateData);
 
-        return redirect()->route('settings')->with('success', 'User berhasil diperbarui.');
+        return redirect()->route('users.index')->with('success', 'User berhasil diperbarui.');
     }
 
     /**

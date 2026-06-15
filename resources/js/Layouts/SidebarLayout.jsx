@@ -2,47 +2,47 @@ import { useState, useEffect } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 
 // Navigation berdasarkan role - sesuai mockup BRD
-const getNavigationByRole = (roleType, unreadCount) => {
+const getNavigationByRole = (roleType, unreadCount, approvalCount) => {
     if (roleType === 'superadmin') {
         return [
             { type: 'item', name: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
-            { type: 'header', name: 'SURAT' },
-            { type: 'item', name: 'Daftar surat', href: '/documents', icon: 'mail-in' },
-            { type: 'item', name: 'Tambah surat', href: '/create', icon: 'plus' },
             { type: 'header', name: 'MANAJEMEN SISTEM' },
             { type: 'item', name: 'Pengguna & role', href: '/users', icon: 'users' },
             { type: 'item', name: 'Template surat', href: '/templates', icon: 'template' },
             { type: 'item', name: 'Format nomor surat', href: '/numbering', icon: 'hash' },
-            { type: 'header', name: 'LAINNYA' },
+            { type: 'item', name: 'Surat dokumen', href: '/documents', icon: 'mail' },
+            { type: 'divider' },
             { type: 'item', name: 'Notifikasi', href: '/notifications', icon: 'bell', badge: unreadCount },
             { type: 'item', name: 'Pengaturan akun', href: '/settings', icon: 'settings' },
+            { type: 'item', name: 'Logout', href: '/logout', icon: 'logout' },
         ];
     }
 
-    if (roleType === 'manajer') {
+    if (roleType === 'manager') {
         return [
             { type: 'item', name: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
             { type: 'header', name: 'APPROVAL' },
-            { type: 'item', name: 'Antrian approval', href: '/approval', icon: 'check-circle', badge: unreadCount },
-            { type: 'header', name: 'SURAT' },
-            { type: 'item', name: 'Daftar surat', href: '/documents', icon: 'mail-in' },
-            { type: 'item', name: 'Format nomor surat', href: '/numbering', icon: 'hash' },
-            { type: 'header', name: 'LAINNYA' },
+            { type: 'item', name: 'Antrian approval', href: '/approval', icon: 'check-circle', badge: approvalCount },
+            { type: 'item', name: 'Surat dokumen', href: '/documents', icon: 'mail' },
+            { type: 'header', name: 'LAPORAN' },
+            { type: 'item', name: 'Laporan & rekap', href: '/laporan', icon: 'chart' },
+            { type: 'divider' },
             { type: 'item', name: 'Notifikasi', href: '/notifications', icon: 'bell', badge: unreadCount },
             { type: 'item', name: 'Pengaturan akun', href: '/settings', icon: 'settings' },
+            { type: 'item', name: 'Logout', href: '/logout', icon: 'logout' },
         ];
     }
 
-    // Staff/Admin
+    // Admin (Logistik, Legal, Sekretasi)
     return [
         { type: 'item', name: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
-        { type: 'header', name: 'SURAT' },
-        { type: 'item', name: 'Daftar surat', href: '/documents', icon: 'mail-in' },
-        { type: 'item', name: 'Tambah surat', href: '/create', icon: 'plus' },
-        { type: 'header', name: 'LAINNYA' },
-        { type: 'item', name: 'Format nomor surat', href: '/numbering', icon: 'hash' },
+        { type: 'item', name: 'Surat dokumen', href: '/documents', icon: 'mail' },
+        { type: 'header', name: 'LAPORAN' },
+        { type: 'item', name: 'Laporan & rekap', href: '/laporan', icon: 'chart' },
+        { type: 'divider' },
         { type: 'item', name: 'Notifikasi', href: '/notifications', icon: 'bell', badge: unreadCount },
         { type: 'item', name: 'Pengaturan akun', href: '/settings', icon: 'settings' },
+        { type: 'item', name: 'Logout', href: '/logout', icon: 'logout' },
     ];
 };
 
@@ -104,6 +104,12 @@ function NavIcon({ name, className }) {
                 <circle cx="14" cy="6" r="2" stroke="currentColor" strokeWidth="1.2" />
             </svg>
         ),
+        mail: (
+            <svg className={className} viewBox="0 0 20 20" fill="none">
+                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M2 6L10 11L18 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+        ),
         'file-text': (
             <svg className={className} viewBox="0 0 20 20" fill="none">
                 <path d="M4 2H12L17 7V18H4V2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
@@ -149,6 +155,13 @@ function NavIcon({ name, className }) {
                 <path d="M14 2L18 6L6 18H2V14L14 2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
             </svg>
         ),
+        logout: (
+            <svg className={className} viewBox="0 0 20 20" fill="none">
+                <path d="M7 17H4C3.44772 17 3 16.5523 3 16V4C3 3.44772 3.44772 3 4 3H7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M13 14L17 10L13 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M17 10H7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        ),
     };
 
     return icons[name] || icons.dashboard;
@@ -157,21 +170,29 @@ function NavIcon({ name, className }) {
 export default function SidebarLayout({ children }) {
     const { auth } = usePage().props;
     const user = auth.user;
-    const roleType = user?.role_type || 'staff';
+    const roleType = user?.role_type || 'admin';
     const currentUrl = window.location.pathname;
     const currentQuery = window.location.search;
     const [mobileOpen, setMobileOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [approvalCount, setApprovalCount] = useState(0);
 
-    const navigation = getNavigationByRole(roleType, unreadCount);
+    const navigation = getNavigationByRole(roleType, unreadCount, approvalCount);
 
-    // Fetch unread count
+    // Fetch unread count and approval count
     useEffect(() => {
         fetch('/notifications/unread-count')
             .then(res => res.json())
             .then(data => setUnreadCount(data.count || 0))
             .catch(() => {});
-    }, [currentUrl]);
+
+        if (roleType === 'manager' || roleType === 'superadmin') {
+            fetch('/approval/pending-count')
+                .then(res => res.json())
+                .then(data => setApprovalCount(data.count || 0))
+                .catch(() => {});
+        }
+    }, [currentUrl, roleType]);
 
     useEffect(() => {
         setMobileOpen(false);
@@ -187,8 +208,13 @@ export default function SidebarLayout({ children }) {
 
     const getRoleLabel = () => {
         if (roleType === 'superadmin') return 'Super Admin';
-        if (roleType === 'manajer') return 'Manajer / Pimpinan';
-        return 'Admin / Sekretaris';
+        if (roleType === 'manager') return 'Manajer / Pimpinan';
+        // Admin with division
+        const divisi = user?.divisi || '';
+        if (divisi === 'Tim Logistik') return 'Admin / Logistik';
+        if (divisi === 'Tim Legal') return 'Admin / Legal';
+        if (divisi === 'Sekretaris') return 'Admin / Sekretasi';
+        return 'Admin';
     };
 
     const getInitials = () => {
@@ -232,6 +258,12 @@ export default function SidebarLayout({ children }) {
             {/* Navigation */}
             <nav className="flex-1 overflow-y-auto py-3 px-3">
                 {navigation.map((item, index) => {
+                    if (item.type === 'divider') {
+                        return (
+                            <div key={`divider-${index}`} className="my-3 mx-3 h-px bg-white/10" />
+                        );
+                    }
+
                     if (item.type === 'header') {
                         return (
                             <div key={`header-${index}`} className="px-3 pt-4 pb-2">
@@ -244,6 +276,20 @@ export default function SidebarLayout({ children }) {
 
                     const isActive = currentUrl === item.href ||
                         (item.href.includes('?') && currentUrl + currentQuery === item.href);
+
+                    // Logout button
+                    if (item.icon === 'logout') {
+                        return (
+                            <button
+                                key={item.name}
+                                onClick={() => router.post('/logout')}
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 transition-all text-white/60 hover:bg-red-500/20 hover:text-red-400 w-full"
+                            >
+                                <NavIcon name={item.icon} className="w-5 h-5 flex-shrink-0 text-white/50" />
+                                <span className="text-sm font-medium flex-1 text-left">{item.name}</span>
+                            </button>
+                        );
+                    }
 
                     return (
                         <Link
@@ -289,7 +335,7 @@ export default function SidebarLayout({ children }) {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 lg:ml-64 min-h-screen flex flex-col">
+            <div className="flex-1 lg:ml-64 min-h-screen flex flex-col bg-gray-50">
                 {/* Mobile Header */}
                 <header className="lg:hidden sticky top-0 z-30 h-14 bg-white border-b border-gray-200 flex items-center px-4">
                     <button
@@ -304,7 +350,7 @@ export default function SidebarLayout({ children }) {
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1">
+                <main className="flex-1 px-6 py-6">
                     {children}
                 </main>
             </div>

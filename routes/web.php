@@ -4,9 +4,11 @@ use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DispositionController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -77,9 +79,18 @@ Route::get('/files/{path}', function ($path) {
     $mime = mime_content_type($fullPath);
     $size = filesize($fullPath);
     $filename = request()->query('name', basename($path));
+    $download = request()->query('download', 'false');
+
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . $size);
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+    // Jika request download=true, paksa download. Jika PDF, tampilkan inline.
+    if ($download === 'true' || $mime !== 'application/pdf') {
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+    } else {
+        header('Content-Disposition: inline; filename="' . $filename . '"');
+    }
+
     readfile($fullPath);
     exit;
 })->where('path', '.*');
@@ -117,20 +128,15 @@ Route::get('/numbering', function () {
 // Approval Page
 Route::get('/approval', function () {
     $user = auth()->user();
-    $isManajer = $user->role_type === 'manajer';
-    $isSuperAdmin = $user->role_type === 'superadmin';
 
+    // Manager melihat semua dokumen yang perlu di-approve
     $query = \App\Models\Document::with(['creator', 'approvals.approver'])
         ->whereHas('approvals', function ($q) use ($user) {
-            $q->where('approver_id', $user->id)->where('status', 'pending');
+            $q->where('approver_id', $user->id);
         });
 
-    if (!$isSuperAdmin) {
-        $query->where('ditugaskan_ke', $user->divisi);
-    }
-
     $documents = $query->orderBy('created_at', 'desc')->get()->map(function ($doc) use ($user) {
-        $approval = $doc->approvals->where('approver_id', $user->id)->where('status', 'pending')->first();
+        $approval = $doc->approvals->where('approver_id', $user->id)->first();
         return [
             'id' => $approval?->id,
             'documentId' => $doc->id,
@@ -163,6 +169,31 @@ Route::middleware(['auth', 'superadmin'])->group(function () {
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+});
+
+// Template Management (superadmin only)
+Route::middleware(['auth', 'superadmin'])->group(function () {
+    Route::get('/templates', [TemplateController::class, 'index'])->name('templates.index');
+    Route::post('/templates', [TemplateController::class, 'store'])->name('templates.store');
+    Route::put('/templates/{template}', [TemplateController::class, 'update'])->name('templates.update');
+    Route::delete('/templates/{template}', [TemplateController::class, 'destroy'])->name('templates.destroy');
+});
+
+// Laporan (manager and admin)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+});
+
+// Approval pending count for sidebar badge
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/approval/pending-count', function () {
+        $user = auth()->user();
+        $count = \App\Models\Document::whereHas('approvals', function ($q) use ($user) {
+            $q->where('approver_id', $user->id)->where('status', 'pending');
+        })->count();
+
+        return response()->json(['count' => $count]);
+    })->name('approval.pendingCount');
 });
 
 // Approval Routes

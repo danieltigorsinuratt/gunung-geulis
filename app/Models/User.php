@@ -79,11 +79,27 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user is manajer/approver.
+     * Check if user is admin (operational staff).
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role_type === 'admin';
+    }
+
+    /**
+     * Check if user is manager/approver.
+     */
+    public function isManager(): bool
+    {
+        return $this->role_type === 'manager';
+    }
+
+    /**
+     * Legacy method - check if user is manajer (for backward compatibility).
      */
     public function isManajer(): bool
     {
-        return $this->role_type === 'manajer';
+        return $this->role_type === 'manager';
     }
 
     /**
@@ -91,7 +107,7 @@ class User extends Authenticatable
      */
     public function canApprove(): bool
     {
-        return in_array($this->role_type, ['superadmin', 'manajer']);
+        return in_array($this->role_type, ['superadmin', 'manager']);
     }
 
     /**

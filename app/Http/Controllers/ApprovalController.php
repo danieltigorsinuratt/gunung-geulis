@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Approval;
 use App\Models\Document;
 use App\Models\Notification;
-use App\Services\NumberingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,59 +12,13 @@ use Illuminate\Support\Facades\DB;
 class ApprovalController extends Controller
 {
     /**
-     * Submit document for approval.
-     */
-    public function submit(Request $request, Document $document)
-    {
-        $user = Auth::user();
-
-        // Only creator can submit
-        if ($document->created_by !== $user->id && !$user->isSuperAdmin()) {
-            abort(403);
-        }
-
-        // Only draft or rejected documents can be submitted
-        if (!in_array($document->status, ['Draft', 'rejected'])) {
-            return back()->with('error', 'Dokumen tidak dapat diajukan untuk approval.');
-        }
-
-        DB::transaction(function () use ($document, $user) {
-            // Update status
-            $document->update(['status' => 'pending_approval']);
-
-            // Find manajer to approve
-            $manajers = \App\Models\User::where('role_type', 'manajer')->get();
-
-            foreach ($manajers as $manajer) {
-                // Create approval record
-                Approval::create([
-                    'document_id' => $document->id,
-                    'approver_id' => $manajer->id,
-                    'status' => 'pending',
-                ]);
-
-                // Create notification
-                Notification::create([
-                    'user_id' => $manajer->id,
-                    'type' => 'approval_submitted',
-                    'title' => 'Surat Menunggu Approval',
-                    'message' => "Surat {$document->nomor_surat} - {$document->perihal} menunggu persetujuan Anda.",
-                    'link' => "/documents/{$document->id}",
-                ]);
-            }
-        });
-
-        return back()->with('success', 'Dokumen berhasil diajukan untuk approval.');
-    }
-
-    /**
      * Approve document.
      */
     public function approve(Request $request, Document $document)
     {
         $user = Auth::user();
 
-        // Only manajer/superadmin can approve
+        // Only manager/superadmin can approve
         if (!$user->canApprove()) {
             abort(403);
         }
@@ -89,22 +42,15 @@ class ApprovalController extends Controller
                 ]);
             }
 
-            // Generate nomor surat resmi
-            $numberingService = new NumberingService();
-            $nomorSurat = $numberingService->generateNomorSurat($document->jenis);
-
-            // Update document status
-            $document->update([
-                'status' => 'approved',
-                'nomor_surat' => $nomorSurat,
-            ]);
+            // Update document status to approved
+            $document->update(['status' => 'approved']);
 
             // Notify creator
             Notification::create([
                 'user_id' => $document->created_by,
                 'type' => 'approved',
                 'title' => 'Surat Disetujui',
-                'message' => "Surat {$document->nomor_surat} - {$document->perihal} telah disetujui. Nomor surat: {$nomorSurat}",
+                'message' => "Surat {$document->nomor_surat} - {$document->perihal} telah disetujui.",
                 'link' => "/documents/{$document->id}",
             ]);
         });
@@ -119,7 +65,7 @@ class ApprovalController extends Controller
     {
         $user = Auth::user();
 
-        // Only manajer/superadmin can reject
+        // Only manager/superadmin can reject
         if (!$user->canApprove()) {
             abort(403);
         }
@@ -143,7 +89,7 @@ class ApprovalController extends Controller
                 ]);
             }
 
-            // Update document status
+            // Update document status to rejected
             $document->update(['status' => 'rejected']);
 
             // Notify creator

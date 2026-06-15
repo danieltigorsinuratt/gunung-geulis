@@ -7,14 +7,15 @@ import ActivityFeed from '@/Components/Dashboard/ActivityFeed';
 
 export default function Dashboard({
     totalDocuments = 0,
-    unansweredDocuments = 0,
+    approvedDocuments = 0,
+    rejectedDocuments = 0,
     urgentDocuments = 0,
-    todayActivities = 0,
     documents = [],
     urgentWarnings = [],
     activities = [],
     selectedDivisi = '',
     isSuperAdmin = false,
+    userRole = '',
 }) {
     const stats = [
         {
@@ -28,41 +29,37 @@ export default function Dashboard({
             ),
             value: totalDocuments.toLocaleString(),
             label: 'TOTAL DOKUMEN',
-            badge: '+0%',
-        },
-        {
-            icon: (
-                <svg width="19" height="21" viewBox="0 0 19 21" fill="none">
-                    <rect x="1" y="1" width="17" height="13" rx="2" stroke="#8B6914" strokeWidth="1.5" />
-                    <path d="M5 19H14" stroke="#8B6914" strokeWidth="1.5" strokeLinecap="round" />
-                    <path d="M9.5 14V19" stroke="#8B6914" strokeWidth="1.5" strokeLinecap="round" />
-                    <path d="M6 7L9 10L13 6" stroke="#8B6914" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-            ),
-            value: unansweredDocuments.toLocaleString(),
-            label: 'BELUM DIBALAS',
         },
         {
             icon: (
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="8" stroke="#BA1A1A" strokeWidth="1.5" />
-                    <path d="M10 6V10" stroke="#BA1A1A" strokeWidth="1.5" strokeLinecap="round" />
-                    <path d="M10 13V13.01" stroke="#BA1A1A" strokeWidth="2" strokeLinecap="round" />
+                    <circle cx="10" cy="10" r="8" stroke="#16A34A" strokeWidth="1.5" />
+                    <path d="M6.5 10L9 12.5L13.5 7.5" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
             ),
-            value: urgentDocuments.toLocaleString(),
-            label: 'SEGERA KEDALUWARSA',
-            variant: 'danger',
+            value: approvedDocuments.toLocaleString(),
+            label: 'DOKUMEN DISETUJUI',
         },
         {
             icon: (
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <circle cx="9" cy="9" r="8" stroke="#1D4ED8" strokeWidth="1.5" />
-                    <path d="M9 4V9L12 12" stroke="#1D4ED8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="8" stroke="#DC2626" strokeWidth="1.5" />
+                    <path d="M7 7L13 13M13 7L7 13" stroke="#DC2626" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
             ),
-            value: todayActivities.toLocaleString(),
-            label: 'AKTIVITAS HARI INI',
+            value: rejectedDocuments.toLocaleString(),
+            label: 'DOKUMEN DITOLAK',
+        },
+        {
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="8" stroke="#EA580C" strokeWidth="1.5" />
+                    <path d="M10 6V10" stroke="#EA580C" strokeWidth="1.5" strokeLinecap="round" />
+                    <path d="M10 13V13.01" stroke="#EA580C" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+            ),
+            value: urgentDocuments.toLocaleString(),
+            label: 'DOKUMEN URGENT',
         },
     ];
     return (
@@ -98,15 +95,21 @@ export default function Dashboard({
                     </p>
                 </div>
                 <div className="flex items-center gap-2 md:gap-3">
-                    <button className="px-3 md:px-4 py-2 rounded-lg border border-primary-700 text-primary-700 text-xs font-mono font-medium tracking-wider hover:bg-primary-700 hover:text-white transition-colors">
+                    <Link
+                        href="/documents-export"
+                        className="px-3 md:px-4 py-2 rounded-lg border border-primary-700 text-primary-700 text-xs font-mono font-medium tracking-wider hover:bg-primary-700 hover:text-white transition-colors"
+                    >
                         Unduh Laporan
-                    </button>
-                    <button className="px-3 md:px-4 py-2 rounded-lg bg-primary-700 text-white text-xs font-mono font-medium tracking-wider hover:bg-primary-800 transition-colors flex items-center gap-2">
+                    </Link>
+                    <Link
+                        href="/create"
+                        className="px-3 md:px-4 py-2 rounded-lg bg-primary-700 text-white text-xs font-mono font-medium tracking-wider hover:bg-primary-800 transition-colors flex items-center gap-2"
+                    >
                         <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
                             <path d="M5.5 0V11M0 5.5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                         Tambah Dokumen
-                    </button>
+                    </Link>
                 </div>
             </div>
 
@@ -117,14 +120,16 @@ export default function Dashboard({
                 ))}
             </div>
 
-            {/* Urgent Warnings & Activity Feed - Side by Side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
-                <div className="h-[320px]">
+            {/* Urgent Warnings - Hanya untuk Manager */}
+            {userRole === 'manager' && (
+                <div className="mb-6 md:mb-8">
                     <UrgentWarning warnings={urgentWarnings} />
                 </div>
-                <div className="h-[320px]">
-                    <ActivityFeed activities={activities} />
-                </div>
+            )}
+
+            {/* Activity Feed */}
+            <div className="mb-6 md:mb-8">
+                <ActivityFeed activities={activities} />
             </div>
 
             {/* Document Table */}

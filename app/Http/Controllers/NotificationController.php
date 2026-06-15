@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class NotificationController extends Controller
 {
@@ -18,7 +19,9 @@ class NotificationController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return response()->json($notifications);
+        return Inertia::render('Notifications/Index', [
+            'notifications' => $notifications,
+        ]);
     }
 
     /**
@@ -27,7 +30,7 @@ class NotificationController extends Controller
     public function unreadCount()
     {
         $user = Auth::user();
-        $count = Notification::unreadCount($user->id);
+        $count = Notification::where('user_id', $user->id)->whereNull('read_at')->count();
 
         return response()->json(['count' => $count]);
     }
@@ -43,9 +46,9 @@ class NotificationController extends Controller
             abort(403);
         }
 
-        $notification->markAsRead();
+        $notification->update(['read_at' => now()]);
 
-        return response()->json(['success' => true]);
+        return back();
     }
 
     /**
@@ -59,6 +62,6 @@ class NotificationController extends Controller
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
-        return response()->json(['success' => true]);
+        return back();
     }
 }
