@@ -84,7 +84,7 @@ Route::get('/files/{path}', function ($path) {
     exit;
 })->where('path', '.*');
 
-Route::get('/settings', function () {
+Route::get('/users', function () {
     $users = User::orderBy('created_at', 'desc')->get()->map(function ($user) {
         return [
             'id'          => $user->id,
@@ -94,19 +94,69 @@ Route::get('/settings', function () {
             'role'        => $user->jabatan ?? '-',
             'status'      => $user->status ?? 'Active',
             'isOnline'    => $user->isOnline(),
-            'lastLoginAt' => $user->last_login_at
-                                ? $user->last_login_at->timestamp
-                                : null,
+            'lastLoginAt' => $user->last_login_at ? $user->last_login_at->timestamp : null,
             'avatar'      => $user->avatar,
             'phone'       => $user->phone ?? '-',
-            'role_type'   => $user->role_type ?? 'admin',
+            'role_type'   => $user->role_type ?? 'staff',
         ];
     });
 
-    return Inertia::render('Settings', [
+    return Inertia::render('Users/Index', [
         'users' => $users,
     ]);
+})->middleware(['auth', 'verified'])->name('users.index');
+
+Route::get('/settings', function () {
+    return Inertia::render('Settings');
 })->middleware(['auth', 'verified'])->name('settings');
+
+Route::get('/numbering', function () {
+    return Inertia::render('Numbering/Index');
+})->middleware(['auth', 'verified'])->name('numbering');
+
+// Approval Page
+Route::get('/approval', function () {
+    $user = auth()->user();
+    $isManajer = $user->role_type === 'manajer';
+    $isSuperAdmin = $user->role_type === 'superadmin';
+
+    $query = \App\Models\Document::with(['creator', 'approvals.approver'])
+        ->whereHas('approvals', function ($q) use ($user) {
+            $q->where('approver_id', $user->id)->where('status', 'pending');
+        });
+
+    if (!$isSuperAdmin) {
+        $query->where('ditugaskan_ke', $user->divisi);
+    }
+
+    $documents = $query->orderBy('created_at', 'desc')->get()->map(function ($doc) use ($user) {
+        $approval = $doc->approvals->where('approver_id', $user->id)->where('status', 'pending')->first();
+        return [
+            'id' => $approval?->id,
+            'documentId' => $doc->id,
+            'status' => $approval?->status ?? 'pending',
+            'createdAt' => $doc->created_at->format('d/m/Y H:i'),
+            'createdBy' => $doc->creator->name ?? '-',
+            'document' => [
+                'judul' => $doc->perihal,
+                'perihal' => $doc->catatan ?? '-',
+                'nomor' => $doc->nomor_surat,
+                'jenis' => $doc->jenis ?? '-',
+            ],
+        ];
+    });
+
+    $stats = [
+        'pending' => $documents->where('status', 'pending')->count(),
+        'approved' => $documents->where('status', 'approved')->count(),
+        'rejected' => $documents->where('status', 'rejected')->count(),
+    ];
+
+    return Inertia::render('Approval/Index', [
+        'approvals' => $documents,
+        'stats' => $stats,
+    ]);
+})->middleware(['auth', 'verified'])->name('approval');
 
 // User Management (superadmin only)
 Route::middleware(['auth', 'superadmin'])->group(function () {

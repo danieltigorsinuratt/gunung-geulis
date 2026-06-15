@@ -3,73 +3,55 @@
 namespace App\Services;
 
 use App\Models\Document;
-use Illuminate\Support\Facades\DB;
 
 class NumberingService
 {
     /**
      * Generate nomor surat resmi.
-     * Format: [Kode]/[Urut]/GGF/[Bulan Romawi]/[Tahun]
-     * Contoh: ADM/001/GGF/VI/2026
+     * Format: GG/[Kode Divisi]/[Urut]/[Tahun]
+     * Contoh: GG/ADM/1043/2023
      */
-    public function generateNomorSurat(string $jenis): string
+    public function generateNomorSurat(string $jenis, string $divisi = null): string
     {
-        $kode = $this->getKodeJenis($jenis);
-        $bulanRomawi = $this->getBulanRomawi(now()->month);
+        $kode = $this->getKodeDivisi($jenis, $divisi);
         $tahun = now()->year;
 
-        // Hitung urutan surat berdasarkan jenis dan bulan/tahun
-        $urutan = Document::where('jenis', $jenis)
-            ->whereYear('created_at', $tahun)
-            ->whereMonth('created_at', now()->month)
-            ->where('status', 'approved')
+        // Hitung urutan surat berdasarkan kode divisi dan tahun
+        $urutan = Document::where('nomor_surat', 'like', "GG/{$kode}/%/{$tahun}")
             ->count() + 1;
 
-        return sprintf('%s/%03d/GGF/%s/%d', $kode, $urutan, $bulanRomawi, $tahun);
+        return sprintf('GG/%s/%04d/%d', $kode, $urutan, $tahun);
     }
 
     /**
-     * Get kode singkatan untuk jenis dokumen.
+     * Get kode divisi berdasarkan jenis dokumen.
      */
-    private function getKodeJenis(string $jenis): string
+    private function getKodeDivisi(string $jenis, string $divisi = null): string
     {
-        $kodes = [
+        // Mapping berdasarkan divisi user
+        $divisiKodes = [
+            'Tim Logistik' => 'OPS',
+            'Tim Legal' => 'LGL',
+            'Sekretaris' => 'ADM',
+            'Superadmin' => 'ADM',
+        ];
+
+        // Mapping berdasarkan jenis dokumen
+        $jenisKodes = [
             'Surat Masuk' => 'SM',
             'Surat Keluar' => 'SK',
-            'Surat Internal' => 'SI',
-            'Surat Keputusan' => 'SK',
-            'Surat Jalan' => 'SJ',
-            'Invois' => 'INV',
-            'Laporan' => 'LPR',
-            'Izin' => 'IZN',
-            'Memo' => 'MEM',
-            'Kontrak' => 'KNT',
+            'Surat Internal' => 'ADM',
+            'Surat Keputusan' => 'LGL',
+            'Surat Jalan' => 'OPS',
+            'Invois' => 'FIN',
+            'Laporan' => 'OPS',
+            'Izin' => 'LGL',
+            'Memo' => 'ADM',
+            'Kontrak' => 'FIN',
             'Lainnya' => 'ADM',
         ];
 
-        return $kodes[$jenis] ?? 'ADM';
-    }
-
-    /**
-     * Convert bulan ke format Romawi.
-     */
-    private function getBulanRomawi(int $bulan): string
-    {
-        $romawi = [
-            1 => 'I',
-            2 => 'II',
-            3 => 'III',
-            4 => 'IV',
-            5 => 'V',
-            6 => 'VI',
-            7 => 'VII',
-            8 => 'VIII',
-            9 => 'IX',
-            10 => 'X',
-            11 => 'XI',
-            12 => 'XII',
-        ];
-
-        return $romawi[$bulan] ?? 'I';
+        // Prioritas: jenis dokumen > divisi user
+        return $jenisKodes[$jenis] ?? $divisiKodes[$divisi] ?? 'ADM';
     }
 }
