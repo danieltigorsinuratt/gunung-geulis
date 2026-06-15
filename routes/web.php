@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DispositionController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReplyController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
@@ -110,6 +113,27 @@ Route::middleware(['auth', 'superadmin'])->group(function () {
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+});
+
+// Approval Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/documents/{document}/submit-approval', [ApprovalController::class, 'submit'])->name('documents.submitApproval');
+    Route::post('/documents/{document}/approve', [ApprovalController::class, 'approve'])->name('documents.approve');
+    Route::post('/documents/{document}/reject', [ApprovalController::class, 'reject'])->name('documents.reject');
+});
+
+// Disposition Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/documents/{document}/disposition', [DispositionController::class, 'store'])->name('documents.disposition');
+    Route::patch('/dispositions/{disposition}', [DispositionController::class, 'update'])->name('dispositions.update');
+});
+
+// Notification Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unreadCount');
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 });
 
 Route::middleware('auth')->group(function () {

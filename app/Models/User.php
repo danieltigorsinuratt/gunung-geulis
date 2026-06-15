@@ -69,4 +69,44 @@ class User extends Authenticatable
             ->where('last_activity', '>=', now()->subMinutes(5)->timestamp)
             ->exists();
     }
+
+    /**
+     * Check if user is superadmin.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role_type === 'superadmin';
+    }
+
+    /**
+     * Check if user is manajer/approver.
+     */
+    public function isManajer(): bool
+    {
+        return $this->role_type === 'manajer';
+    }
+
+    /**
+     * Check if user can approve documents.
+     */
+    public function canApprove(): bool
+    {
+        return in_array($this->role_type, ['superadmin', 'manajer']);
+    }
+
+    /**
+     * Get notifications for this user.
+     */
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Get unread notifications count.
+     */
+    public function unreadNotificationsCount(): int
+    {
+        return $this->notifications()->whereNull('read_at')->count();
+    }
 }

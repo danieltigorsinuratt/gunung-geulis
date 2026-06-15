@@ -76,10 +76,12 @@ class DocumentController extends Controller
      */
     public function show(Request $request, string $id): Response
     {
-        $doc = Document::with(['creator', 'replies.creator'])->findOrFail($id);
+        $doc = Document::with(['creator', 'replies.creator', 'approvals.approver', 'dispositions.fromUser', 'dispositions.toUser'])->findOrFail($id);
         $user = $request->user();
         $isSuperAdmin = $user->role_type === 'superadmin';
-        $canReply = $isSuperAdmin || $user->divisi === $doc->ditugaskan_ke;
+        $isManajer = $user->role_type === 'manajer';
+        $canReply = $isSuperAdmin || $isManajer || $user->divisi === $doc->ditugaskan_ke;
+        $canApprove = $isSuperAdmin || $isManajer;
 
         return Inertia::render('Documents/Show', [
             'document' => [
@@ -110,6 +112,21 @@ class DocumentController extends Controller
                     ],
                 ],
             ],
+            'approvals' => $doc->approvals->map(fn($approval) => [
+                'id' => $approval->id,
+                'approver' => $approval->approver->name ?? '-',
+                'status' => $approval->status,
+                'notes' => $approval->notes,
+                'decidedAt' => $approval->decided_at?->format('d/m/Y H:i'),
+            ]),
+            'dispositions' => $doc->dispositions->map(fn($disp) => [
+                'id' => $disp->id,
+                'from' => $disp->fromUser->name ?? '-',
+                'to' => $disp->toUser->name ?? '-',
+                'catatan' => $disp->catatan,
+                'deadline' => $disp->deadline?->format('d/m/Y H:i'),
+                'status' => $disp->status,
+            ]),
             'replies' => $doc->replies->map(fn($reply) => [
                 'id'         => $reply->id,
                 'nama'       => $reply->creator->name ?? '-',
@@ -124,7 +141,14 @@ class DocumentController extends Controller
             ]),
             'canReply'  => $canReply,
             'isSuperAdmin' => $isSuperAdmin,
+            'isManajer' => $isManajer,
+            'canApprove' => $canApprove,
             'userDivisi' => $user->divisi,
+            'users' => \App\Models\User::where('role_type', '!=', 'superadmin')->get()->map(fn($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'divisi' => $u->divisi,
+            ]),
         ]);
     }
 

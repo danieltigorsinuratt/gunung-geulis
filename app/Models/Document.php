@@ -69,4 +69,36 @@ class Document extends Model
     {
         return $this->hasMany(Reply::class)->orderBy('created_at', 'asc');
     }
+
+    /**
+     * Get the approvals for this document.
+     */
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(Approval::class);
+    }
+
+    /**
+     * Get the dispositions for this document.
+     */
+    public function dispositions(): HasMany
+    {
+        return $this->hasMany(Disposition::class);
+    }
+
+    /**
+     * Check if document needs approval.
+     */
+    public function needsApproval(): bool
+    {
+        return $this->status === 'pending_approval';
+    }
+
+    /**
+     * Check if document is approved.
+     */
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
 }

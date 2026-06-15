@@ -63,12 +63,46 @@ const jenisColors = {
     OPERASIONAL: 'bg-[#F2EDE5]',
 };
 
+const tabs = [
+    { id: 'semua', label: 'Semua' },
+    { id: 'masuk', label: 'Surat Masuk' },
+    { id: 'keluar', label: 'Surat Keluar' },
+    { id: 'internal', label: 'Internal' },
+    { id: 'sk', label: 'Keputusan' },
+];
+
+const jenisToTab = {
+    'surat-masuk': 'masuk',
+    'surat-jalan': 'masuk',
+    'izin': 'masuk',
+    'surat-keluar': 'keluar',
+    'invois': 'keluar',
+    'kontrak': 'keluar',
+    'memo': 'internal',
+    'laporan': 'internal',
+    'sk': 'sk',
+    'surat-keputusan': 'sk',
+};
+
 export default function DocumentIndex({ documents = [], isSuperAdmin = false, userDivisi = '' }) {
+    const [activeTab, setActiveTab] = useState('semua');
     const [filters, setFilters] = useState({
         jenis: '',
         status: '',
         periode: '',
         lokasi: '',
+    });
+
+    const filteredDocuments = documents.filter((doc) => {
+        // Tab filter
+        if (activeTab !== 'semua') {
+            const docTab = jenisToTab[doc.jenis?.toLowerCase()] || 'internal';
+            if (docTab !== activeTab) return false;
+        }
+        // Existing filters
+        if (filters.jenis && doc.jenis?.toLowerCase() !== filters.jenis.toLowerCase()) return false;
+        if (filters.status && doc.status !== filters.status) return false;
+        return true;
     });
 
     return (
@@ -107,6 +141,23 @@ export default function DocumentIndex({ documents = [], isSuperAdmin = false, us
                         Tambah Dokumen
                     </Link>
                 </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 mb-6 overflow-x-auto">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-4 py-2.5 text-sm font-hanken font-medium rounded-lg whitespace-nowrap transition-colors ${
+                            activeTab === tab.id
+                                ? 'bg-primary-700 text-white'
+                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-surface-border'
+                        }`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
             {/* Filter Section - Semua User */}
@@ -245,7 +296,7 @@ export default function DocumentIndex({ documents = [], isSuperAdmin = false, us
                             Belum ada dokumen yang diarsipkan.
                         </div>
                     ) : (
-                        documents.map((doc, index) => (
+                        filteredDocuments.map((doc, index) => (
                         <div
                             key={doc.id}
                             className={`flex items-center ${
@@ -366,7 +417,7 @@ export default function DocumentIndex({ documents = [], isSuperAdmin = false, us
                         Belum ada dokumen yang diarsipkan.
                     </div>
                 ) : (
-                    documents.map((doc) => (
+                    filteredDocuments.map((doc) => (
                     <div
                         key={doc.id}
                         className="bg-white shadow-sm rounded-xl border border-surface-border p-4 flex flex-col gap-2 hover:bg-surface/30 transition-colors"
