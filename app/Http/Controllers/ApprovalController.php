@@ -45,6 +45,12 @@ class ApprovalController extends Controller
             // Update document status to approved
             $document->update(['status' => 'approved']);
 
+            // Mark all "Menunggu Approval" notifications for this document as read
+            Notification::where('type', 'approval_submitted')
+                ->where('link', "/documents/{$document->id}")
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+
             // Notify creator
             Notification::create([
                 'user_id' => $document->created_by,
@@ -91,6 +97,12 @@ class ApprovalController extends Controller
 
             // Update document status to rejected
             $document->update(['status' => 'rejected']);
+
+            // Mark all "Menunggu Approval" notifications for this document as read
+            Notification::where('type', 'approval_submitted')
+                ->where('link', "/documents/{$document->id}")
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
 
             // Notify creator
             Notification::create([

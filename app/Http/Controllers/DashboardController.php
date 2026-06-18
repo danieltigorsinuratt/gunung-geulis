@@ -46,9 +46,14 @@ class DashboardController extends Controller
         }
 
         // Base query: semua dokumen untuk dashboard
+        // Manager melihat semua dokumen (tidak dibatasi divisi)
+        // Superadmin melihat dokumen sesuai divisi yang dipilih
+        // Admin melihat dokumen divisi sendiri
         $baseQuery = Document::query();
         if ($isSuperAdmin && $selectedDivisi) {
             $baseQuery->where('ditugaskan_ke', $selectedDivisi);
+        } elseif ($isManager && !$user->divisi) {
+            // Manager tanpa divisi → lihat semua dokumen
         } elseif (!$isSuperAdmin) {
             $baseQuery->where('ditugaskan_ke', $user->divisi);
         }
@@ -62,14 +67,13 @@ class DashboardController extends Controller
         // 3. Dokumen Ditolak
         $rejectedDocuments = (clone $baseQuery)->where('status', 'rejected')->count();
 
-        // 4. Dokumen Urgent (prioritas URGENT atau segera kedaluwarsa)
+        // 4. Dokumen Urgent (prioritas URGENT atau segera kedaluwarsa/overdue)
         $urgentDocuments = (clone $baseQuery)
             ->where(function ($q) {
                 $q->where('prioritas', 'URGENT')
                   ->orWhere(function ($q2) {
                       $q2->whereNotNull('batas_waktu')
-                         ->where('batas_waktu', '<=', now()->addDays(3))
-                         ->where('batas_waktu', '>=', now());
+                         ->where('batas_waktu', '<=', now()->addDays(3));
                   });
             })
             ->count();
@@ -104,22 +108,28 @@ class DashboardController extends Controller
         $urgentWarnings = [];
         if ($user->role_type === 'manager' || $isSuperAdmin) {
             $urgentWarnings = (clone $baseQuery)
+                ->where('status', 'pending')
                 ->where(function ($q) {
                     $q->where('prioritas', 'URGENT')
                       ->orWhere(function ($q2) {
                           $q2->whereNotNull('batas_waktu')
-                             ->where('batas_waktu', '<=', now()->addDays(3))
-                             ->where('batas_waktu', '>=', now());
+                             ->where('batas_waktu', '<=', now()->addDays(3));
                       });
                 })
                 ->orderBy('batas_waktu', 'asc')
                 ->limit(5)
                 ->get()
                 ->map(function ($doc) {
-                    $daysLeft = $doc->batas_waktu ? max(0, (int) now()->diffInDays($doc->batas_waktu, false)) : null;
+                    $daysLeft = $doc->batas_waktu ? (int) now()->diffInDays($doc->batas_waktu, false) : null;
 
                     if ($daysLeft !== null) {
-                        $badge = $daysLeft === 0 ? 'HARI INI' : 'KEDALUWARSA ' . $daysLeft . ' HARI';
+                        if ($daysLeft < 0) {
+                            $badge = 'TERLAMBAT ' . abs($daysLeft) . ' HARI';
+                        } elseif ($daysLeft === 0) {
+                            $badge = 'HARI INI';
+                        } else {
+                            $badge = 'KEDALUWARSA ' . $daysLeft . ' HARI';
+                        }
                     } else {
                         $badge = $doc->masa_berlaku ? 'MASA BERLAKU' : 'DEADLINE';
                     }

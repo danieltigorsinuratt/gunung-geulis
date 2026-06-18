@@ -1,3 +1,5 @@
+import { Link } from '@inertiajs/react';
+
 const borderColor = {
     red: 'border-l-[#BA1A1A]',
     amber: 'border-l-[#8B6914]',
@@ -33,11 +35,12 @@ export default function UrgentWarning({ warnings }) {
                                     <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${badgeColor[warning.color] || badgeColor.red}`}>
                                         {warning.badge}
                                     </span>
-                                    <button className="text-gray-400 hover:text-gray-600">
-                                        <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
-                                            <path d="M1 11L11 1M1 1L11 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                        </svg>
-                                    </button>
+                                    <Link
+                                        href={`/documents/${warning.id}`}
+                                        className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary-700 hover:text-primary-900 transition-colors"
+                                    >
+                                        Lihat →
+                                    </Link>
                                 </div>
                                 <div className="text-sm font-hanken font-bold text-primary-900">
                                     {warning.title}
