@@ -125,6 +125,54 @@ Route::get('/numbering', function () {
     return Inertia::render('Numbering/Index');
 })->middleware(['auth', 'verified'])->name('numbering');
 
+// Cash Management
+Route::get('/cash', [\App\Http\Controllers\CashController::class, 'index'])
+    ->middleware(['auth', 'verified'])->name('cash.dashboard');
+
+Route::post('/cash', [\App\Http\Controllers\CashController::class, 'store'])
+    ->middleware(['auth', 'verified'])->name('cash.store');
+
+Route::post('/cash/{transaction}/approve', [\App\Http\Controllers\CashController::class, 'approve'])
+    ->middleware(['auth', 'verified'])->name('cash.approve');
+
+Route::post('/cash/{transaction}/reject', [\App\Http\Controllers\CashController::class, 'reject'])
+    ->middleware(['auth', 'verified'])->name('cash.reject');
+
+Route::get('/cash/ledger', [\App\Http\Controllers\CashController::class, 'ledger'])
+    ->middleware(['auth', 'verified'])->name('cash.ledger');
+
+Route::get('/cash/create', function () {
+    $jenis = request()->query('jenis', 'pemasukan');
+    return Inertia::render('Cash/Create', ['jenis' => $jenis]);
+})->middleware(['auth', 'verified'])->name('cash.create');
+
+Route::get('/cash/approval', function () {
+    $user = auth()->user();
+    $transactions = \App\Models\Transaction::pending()->with('creator')->orderByDesc('tanggal')->get()
+        ->map(fn($t) => [
+            'id' => $t->id,
+            'tanggal' => $t->tanggal->format('d/m/Y'),
+            'referensi' => $t->referensi,
+            'deskripsi' => $t->deskripsi,
+            'jenis' => $t->jenis,
+            'nominal' => (float) $t->nominal,
+            'status' => $t->status,
+            'pihak' => $t->pihak,
+            'kategori' => $t->kategori,
+        ]);
+
+    $stats = [
+        'pending' => \App\Models\Transaction::pending()->count(),
+        'approved' => \App\Models\Transaction::approved()->count(),
+        'rejected' => \App\Models\Transaction::where('status', 'rejected')->count(),
+    ];
+
+    return Inertia::render('Cash/Approval', [
+        'transactions' => $transactions,
+        'stats' => $stats,
+    ]);
+})->middleware(['auth', 'verified'])->name('cash.approval');
+
 // Approval Page
 Route::get('/approval', function () {
     $user = auth()->user();
