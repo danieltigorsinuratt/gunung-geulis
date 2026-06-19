@@ -11,54 +11,66 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Super Admin
-        User::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@gmail.com',
-            'password' => Hash::make('password'),
-            'role_type' => 'superadmin',
-            'status' => 'Active',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'superadmin@gmail.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('password'),
+                'role_type' => 'superadmin',
+                'status' => 'Active',
+            ]
+        );
 
         // Manager
-        User::create([
-            'name' => 'Manager Utama',
-            'email' => 'manager@gmail.com',
-            'password' => Hash::make('password'),
-            'role_type' => 'manager',
-            'status' => 'Active',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'manager@gmail.com'],
+            [
+                'name' => 'Manager Utama',
+                'password' => Hash::make('password'),
+                'role_type' => 'manajer',
+                'divisi' => 'Tim Logistik',
+                'jabatan' => 'Manajer Utama',
+                'status' => 'Active',
+            ]
+        );
 
         // Admin Logistik
-        User::create([
-            'name' => 'Admin Logistik',
-            'email' => 'logistik@gmail.com',
-            'password' => Hash::make('password'),
-            'role_type' => 'admin',
-            'divisi' => 'Tim Logistik',
-            'jabatan' => 'Staff Logistik',
-            'status' => 'Active',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'logistik@gmail.com'],
+            [
+                'name' => 'Admin Logistik',
+                'password' => Hash::make('password'),
+                'role_type' => 'admin',
+                'divisi' => 'Tim Logistik',
+                'jabatan' => 'Staff Logistik',
+                'status' => 'Active',
+            ]
+        );
 
         // Admin Legal
-        User::create([
-            'name' => 'Admin Legal',
-            'email' => 'legal@gmail.com',
-            'password' => Hash::make('password'),
-            'role_type' => 'admin',
-            'divisi' => 'Tim Legal',
-            'jabatan' => 'Staff Legal',
-            'status' => 'Active',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'legal@gmail.com'],
+            [
+                'name' => 'Admin Legal',
+                'password' => Hash::make('password'),
+                'role_type' => 'admin',
+                'divisi' => 'Tim Legal',
+                'jabatan' => 'Staff Legal',
+                'status' => 'Active',
+            ]
+        );
 
-        // Admin Sekretasi
-        User::create([
-            'name' => 'Admin Sekretasi',
-            'email' => 'sekretaris@gmail.com',
-            'password' => Hash::make('password'),
-            'role_type' => 'admin',
-            'divisi' => 'Sekretaris',
-            'jabatan' => 'Staff Sekretasi',
-            'status' => 'Active',
-        ]);
+        // Admin Sekretaris
+        User::updateOrCreate(
+            ['email' => 'sekretaris@gmail.com'],
+            [
+                'name' => 'Admin Sekretaris',
+                'password' => Hash::make('password'),
+                'role_type' => 'admin',
+                'divisi' => 'Sekretaris',
+                'jabatan' => 'Staff Sekretaris',
+                'status' => 'Active',
+            ]
+        );
     }
 }

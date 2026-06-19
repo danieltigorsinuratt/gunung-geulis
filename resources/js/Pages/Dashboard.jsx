@@ -5,6 +5,115 @@ import DocumentTable from '@/Components/Dashboard/DocumentTable';
 import UrgentWarning from '@/Components/Dashboard/UrgentWarning';
 import ActivityFeed from '@/Components/Dashboard/ActivityFeed';
 
+// Dashboard Super Admin
+function SuperAdminDashboard({ stats, documents, activities, selectedDivisi }) {
+    return (
+        <>
+            <div className="mb-8">
+                <h1 className="text-2xl font-hanken font-semibold text-primary-900">Dashboard Super Admin</h1>
+                <p className="text-sm font-hanken text-gray-600 mt-1">
+                    Ringkasan seluruh sistem persuratan Gunung Geulis Farm.
+                    {selectedDivisi && <span className="font-bold"> Menampilkan: {selectedDivisi}</span>}
+                </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {stats.map((stat, i) => <StatCard key={i} {...stat} />)}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <div className="lg:col-span-2">
+                    <DocumentTable documents={documents} />
+                </div>
+                <div className="flex flex-col gap-8">
+                    <ActivityFeed activities={activities} />
+                </div>
+            </div>
+        </>
+    );
+}
+
+// Dashboard Manager
+function ManagerDashboard({ stats, documents, urgentWarnings, activities }) {
+    return (
+        <>
+            <div className="mb-8">
+                <h1 className="text-2xl font-hanken font-semibold text-primary-900">Dashboard Manager</h1>
+                <p className="text-sm font-hanken text-gray-600 mt-1">
+                    Pantau persetujuan surat dan aktivitas tim hari ini.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {stats.map((stat, i) => <StatCard key={i} {...stat} />)}
+            </div>
+
+            {/* Quick Action: Antrian Approval */}
+            <div className="bg-white rounded-xl border border-surface-border p-6 mb-8">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-lg font-hanken font-bold text-primary-900">Antrian Approval</h2>
+                        <p className="text-sm font-hanken text-gray-600">Surat yang menunggu persetujuan Anda.</p>
+                    </div>
+                    <Link href="/approval" className="px-4 py-2 bg-primary-700 text-white rounded-lg text-sm font-hanken font-bold hover:bg-primary-800 transition-colors">
+                        Lihat Semua →
+                    </Link>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <div className="lg:col-span-2">
+                    <DocumentTable documents={documents} />
+                </div>
+                <div className="flex flex-col gap-8">
+                    <UrgentWarning warnings={urgentWarnings} />
+                    <ActivityFeed activities={activities} />
+                </div>
+            </div>
+        </>
+    );
+}
+
+// Dashboard Admin
+function AdminDashboard({ stats, documents, activities }) {
+    return (
+        <>
+            <div className="mb-8">
+                <h1 className="text-2xl font-hanken font-semibold text-primary-900">Dashboard</h1>
+                <p className="text-sm font-hanken text-gray-600 mt-1">
+                    Pantau status surat dan aktivitas hari ini.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {stats.map((stat, i) => <StatCard key={i} {...stat} />)}
+            </div>
+
+            {/* Quick Action: Tambah Surat */}
+            <div className="bg-white rounded-xl border border-surface-border p-6 mb-8">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-lg font-hanken font-bold text-primary-900">Surat Saya</h2>
+                        <p className="text-sm font-hanken text-gray-600">Lihat status surat yang telah Anda buat.</p>
+                    </div>
+                    <Link href="/my-documents" className="px-4 py-2 bg-primary-700 text-white rounded-lg text-sm font-hanken font-bold hover:bg-primary-800 transition-colors">
+                        Lihat Semua →
+                    </Link>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <div className="lg:col-span-2">
+                    <DocumentTable documents={documents} />
+                </div>
+                <div className="flex flex-col gap-8">
+                    <ActivityFeed activities={activities} />
+                </div>
+            </div>
+        </>
+    );
+}
+
 export default function Dashboard({
     totalDocuments = 0,
     approvedDocuments = 0,
@@ -33,109 +142,49 @@ export default function Dashboard({
         {
             icon: (
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="8" stroke="#16A34A" strokeWidth="1.5" />
-                    <path d="M6.5 10L9 12.5L13.5 7.5" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="10" cy="10" r="8" stroke="#396A10" strokeWidth="1.5"/>
+                    <path d="M6.5 10L9 12.5L13.5 7.5" stroke="#396A10" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
             ),
             value: approvedDocuments.toLocaleString(),
-            label: 'DOKUMEN DISETUJUI',
+            label: 'DISETUJUI',
         },
         {
             icon: (
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="8" stroke="#DC2626" strokeWidth="1.5" />
-                    <path d="M7 7L13 13M13 7L7 13" stroke="#DC2626" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="10" cy="10" r="8" stroke="#BA1A1A" strokeWidth="1.5"/>
+                    <path d="M7 7L13 13M13 7L7 13" stroke="#BA1A1A" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
             ),
             value: rejectedDocuments.toLocaleString(),
-            label: 'DOKUMEN DITOLAK',
+            label: 'DITOLAK',
         },
         {
             icon: (
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="8" stroke="#EA580C" strokeWidth="1.5" />
-                    <path d="M10 6V10" stroke="#EA580C" strokeWidth="1.5" strokeLinecap="round" />
-                    <path d="M10 13V13.01" stroke="#EA580C" strokeWidth="2" strokeLinecap="round" />
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <circle cx="9" cy="9" r="8" stroke="#1D4ED8" strokeWidth="1.5" />
+                    <path d="M9 4V9L12 12" stroke="#1D4ED8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
             ),
             value: urgentDocuments.toLocaleString(),
-            label: 'DOKUMEN URGENT',
+            label: 'URGENT',
+            variant: urgentDocuments > 0 ? 'danger' : 'default',
         },
     ];
+
     return (
         <SidebarLayout>
             <Head title="Dashboard" />
 
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 md:mb-8">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        {isSuperAdmin && (
-                            <Link
-                                href={route('dashboard')}
-                                className="p-1.5 rounded-lg hover:bg-surface transition-colors"
-                                title="Kembali ke Pilih Divisi"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <path d="M12 4L6 10L12 16" stroke="#173901" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                            </Link>
-                        )}
-                        <h1 className="text-xl md:text-2xl font-hanken font-semibold text-primary-900 leading-8">
-                            Ringkasan Operasional
-                        </h1>
-                        {selectedDivisi && (
-                            <span className="px-3 py-1 bg-primary-700 text-white text-xs font-mono font-bold rounded-full">
-                                {selectedDivisi}
-                            </span>
-                        )}
-                    </div>
-                    <p className="text-sm md:text-base font-hanken text-gray-600 mt-1">
-                        Pantau status persuratan dan administrasi peternakan hari ini.
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 md:gap-3">
-                    <Link
-                        href="/documents-export"
-                        className="px-3 md:px-4 py-2 rounded-lg border border-primary-700 text-primary-700 text-xs font-mono font-medium tracking-wider hover:bg-primary-700 hover:text-white transition-colors"
-                    >
-                        Unduh Laporan
-                    </Link>
-                    <Link
-                        href="/create"
-                        className="px-3 md:px-4 py-2 rounded-lg bg-primary-700 text-white text-xs font-mono font-medium tracking-wider hover:bg-primary-800 transition-colors flex items-center gap-2"
-                    >
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                            <path d="M5.5 0V11M0 5.5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                        Tambah Dokumen
-                    </Link>
-                </div>
-            </div>
-
-            {/* Stat Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-                {stats.map((stat, index) => (
-                    <StatCard key={index} {...stat} />
-                ))}
-            </div>
-
-            {/* Urgent Warnings - Hanya untuk Manager */}
-            {userRole === 'manager' && (
-                <div className="mb-6 md:mb-8">
-                    <UrgentWarning warnings={urgentWarnings} />
-                </div>
+            {userRole === 'superadmin' && (
+                <SuperAdminDashboard stats={stats} documents={documents} activities={activities} selectedDivisi={selectedDivisi} />
             )}
-
-            {/* Activity Feed */}
-            <div className="mb-6 md:mb-8">
-                <ActivityFeed activities={activities} />
-            </div>
-
-            {/* Document Table */}
-            <div className="mb-6 md:mb-8">
-                <DocumentTable documents={documents} />
-            </div>
+            {userRole === 'manajer' && (
+                <ManagerDashboard stats={stats} documents={documents} urgentWarnings={urgentWarnings} activities={activities} />
+            )}
+            {userRole === 'admin' && (
+                <AdminDashboard stats={stats} documents={documents} activities={activities} />
+            )}
         </SidebarLayout>
     );
 }

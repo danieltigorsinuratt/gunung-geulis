@@ -18,7 +18,7 @@ const getNavigationByRole = (roleType, unreadCount, approvalCount) => {
         ];
     }
 
-    if (roleType === 'manager') {
+    if (roleType === 'manajer' || roleType === 'manager') {
         return [
             { type: 'item', name: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
             { type: 'header', name: 'APPROVAL' },
@@ -208,7 +208,7 @@ export default function SidebarLayout({ children }) {
 
     const getRoleLabel = () => {
         if (roleType === 'superadmin') return 'Super Admin';
-        if (roleType === 'manager') return 'Manajer / Pimpinan';
+        if (roleType === 'manajer') return 'Manajer / Pimpinan';
         // Admin with division
         const divisi = user?.divisi || '';
         if (divisi === 'Tim Logistik') return 'Admin / Logistik';
