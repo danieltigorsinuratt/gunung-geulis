@@ -12,6 +12,52 @@ use Illuminate\Support\Facades\DB;
 class ApprovalController extends Controller
 {
     /**
+     * Submit document for approval.
+     */
+    public function submit(Request $request, Document $document)
+    {
+        $user = Auth::user();
+
+        // Only creator can submit
+        if ($document->created_by !== $user->id && !$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        // Only draft or rejected documents can be submitted
+        if (!in_array($document->status, ['draft', 'rejected'])) {
+            return back()->with('error', 'Dokumen tidak dapat diajukan untuk approval.');
+        }
+
+        DB::transaction(function () use ($document, $user) {
+            // Update status
+            $document->update(['status' => 'pending']);
+
+            // Find manajer to approve
+            $manajers = \App\Models\User::where('role_type', 'manajer')->get();
+
+            foreach ($manajers as $manajer) {
+                // Create approval record
+                Approval::create([
+                    'document_id' => $document->id,
+                    'approver_id' => $manajer->id,
+                    'status' => 'pending',
+                ]);
+
+                // Create notification
+                Notification::create([
+                    'user_id' => $manajer->id,
+                    'type' => 'approval_submitted',
+                    'title' => 'Surat Menunggu Approval',
+                    'message' => "Surat {$document->nomor_surat} - {$document->perihal} menunggu persetujuan Anda.",
+                    'link' => "/documents/{$document->id}",
+                ]);
+            }
+        });
+
+        return back()->with('success', 'Dokumen berhasil diajukan untuk approval.');
+    }
+
+    /**
      * Approve document.
      */
     public function approve(Request $request, Document $document)
