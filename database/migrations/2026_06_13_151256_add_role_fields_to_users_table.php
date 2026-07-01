@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('role_type')->default('staff')->after('email');
-            $table->string('divisi')->nullable()->after('role_type');
-            $table->string('jabatan')->nullable()->after('divisi');
-            $table->string('status')->default('Active')->after('jabatan');
-        });
+        // Columns divisi, jabatan, status already added in 2026_06_13_134746_add_profile_fields_to_users_table
+        // This migration is kept for historical purposes only
     }
 
     /**
@@ -24,8 +20,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['role_type', 'divisi', 'jabatan', 'status']);
-        });
+        // Nothing to drop
     }
 };

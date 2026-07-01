@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         DB::statement("UPDATE users SET role_type = 'admin' WHERE role_type = 'staff'");
-        DB::statement("ALTER TABLE users MODIFY COLUMN role_type ENUM('superadmin', 'admin', 'manajer') DEFAULT 'admin'");
+        DB::statement("ALTER TABLE users MODIFY COLUMN role_type ENUM('superadmin', 'admin', 'manager') DEFAULT 'admin'");
     }
 
     public function down(): void

@@ -8,21 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            $table->string('metode_bayar')->nullable()->after('nominal');
-            $table->string('file_bukti')->nullable()->after('catatan');
-            $table->string('file_bukti_original')->nullable()->after('file_bukti');
-            $table->string('surat_referensi')->nullable()->after('file_bukti_original');
-            $table->text('rejection_notes')->nullable()->after('catatan');
-            $table->foreignId('approved_by')->nullable()->after('created_by');
-            $table->timestamp('approved_at')->nullable()->after('approved_by');
-        });
+        // All columns (metode_bayar, file_bukti, file_bukti_original, surat_referensi,
+        // rejection_notes, approved_by, approved_at) are already included in
+        // 2026_06_19_090803_create_transactions_table.php
+        // This migration is kept for historical purposes only.
     }
 
     public function down(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            $table->dropColumn(['metode_bayar', 'file_bukti', 'file_bukti_original', 'surat_referensi', 'rejection_notes', 'approved_by', 'approved_at']);
-        });
+        // Nothing to drop
     }
 };

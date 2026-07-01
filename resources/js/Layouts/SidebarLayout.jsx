@@ -215,7 +215,7 @@ export default function SidebarLayout({ children }) {
 
     const getRoleLabel = () => {
         if (roleType === 'superadmin') return 'Super Admin';
-        if (roleType === 'manajer') return 'Manajer / Pimpinan';
+        if (roleType === 'manager' || roleType === 'manajer') return 'Manager';
         // Admin with division
         const divisi = user?.divisi || '';
         if (divisi === 'Tim Logistik') return 'Admin / Logistik';
@@ -263,7 +263,7 @@ export default function SidebarLayout({ children }) {
             <div className="mx-4 h-px bg-white/10" />
 
             {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto py-3 px-3">
+            <nav className="flex-1 overflow-y-auto py-3 px-3 no-scrollbar">
                 {navigation.map((item, index) => {
                     if (item.type === 'divider') {
                         return (

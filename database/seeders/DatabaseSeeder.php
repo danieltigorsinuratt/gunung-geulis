@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Manager Utama',
                 'password' => Hash::make('password'),
-                'role_type' => 'manajer',
+                'role_type' => 'manager',
                 'divisi' => 'Tim Logistik',
                 'jabatan' => 'Manajer Utama',
                 'status' => 'Active',

@@ -33,7 +33,7 @@ class ApprovalController extends Controller
             $document->update(['status' => 'pending']);
 
             // Find manajer to approve
-            $manajers = \App\Models\User::where('role_type', 'manajer')->get();
+            $manajers = \App\Models\User::where('role_type', 'manager')->get();
 
             foreach ($manajers as $manajer) {
                 // Create approval record

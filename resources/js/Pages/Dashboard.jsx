@@ -96,7 +96,7 @@ function AdminDashboard({ stats, documents, activities }) {
                         <h2 className="text-lg font-hanken font-bold text-primary-900">Surat Saya</h2>
                         <p className="text-sm font-hanken text-gray-600">Lihat status surat yang telah Anda buat.</p>
                     </div>
-                    <Link href="/my-documents" className="px-4 py-2 bg-primary-700 text-white rounded-lg text-sm font-hanken font-bold hover:bg-primary-800 transition-colors">
+                    <Link href="/documents" className="px-4 py-2 bg-primary-700 text-white rounded-lg text-sm font-hanken font-bold hover:bg-primary-800 transition-colors">
                         Lihat Semua →
                     </Link>
                 </div>
@@ -179,7 +179,7 @@ export default function Dashboard({
             {userRole === 'superadmin' && (
                 <SuperAdminDashboard stats={stats} documents={documents} activities={activities} selectedDivisi={selectedDivisi} />
             )}
-            {userRole === 'manajer' && (
+            {(userRole === 'manager' || userRole === 'manajer') && (
                 <ManagerDashboard stats={stats} documents={documents} urgentWarnings={urgentWarnings} activities={activities} />
             )}
             {userRole === 'admin' && (
