@@ -148,11 +148,13 @@ Route::get('/cash/create', function () {
 
 Route::get('/cash/approval', function () {
     $user = auth()->user();
-    $transactions = \App\Models\Transaction::pending()->with('creator')->orderByDesc('tanggal')->get()
+    $transactions = \App\Models\Transaction::with('creator')->orderByDesc('tanggal')->get()
         ->map(fn($t) => [
             'id' => $t->id,
             'tanggal' => $t->tanggal->format('d/m/Y'),
             'referensi' => $t->referensi,
+            'divisi_uploader' => $t->creator?->divisi ?? '-',
+            'nama_uploader' => $t->creator?->name ?? '-',
             'deskripsi' => $t->deskripsi,
             'jenis' => $t->jenis,
             'nominal' => (float) $t->nominal,
