@@ -40,7 +40,7 @@ class CashController extends Controller
 
         // Pending approval (Manager & Superadmin)
         $pendingApproval = 0;
-        if ($role === 'manajer' || $role === 'superadmin') {
+        if ($role === 'manager' || $role === 'manajer' || $role === 'superadmin') {
             $pendingApproval = Transaction::pending()->count();
         }
 
@@ -109,6 +109,30 @@ class CashController extends Controller
                 'kategori' => $t->kategori,
             ]);
 
+        // Transaksi Per Divisi (Khusus Manager dan Superadmin)
+        $transaksiPerDivisi = [];
+        if ($role === 'manager' || $role === 'manajer' || $role === 'superadmin') {
+            $divisions = ['Tim Logistik', 'Tim Legal', 'Sekretaris'];
+            foreach ($divisions as $div) {
+                $transaksiPerDivisi[$div] = Transaction::where('divisi', $div)
+                    ->with('creator')
+                    ->orderByDesc('tanggal')
+                    ->limit(10)
+                    ->get()
+                    ->map(fn($t) => [
+                        'id' => $t->id,
+                        'tanggal' => $t->tanggal->format('d/m/Y'),
+                        'referensi' => $t->referensi,
+                        'deskripsi' => $t->deskripsi,
+                        'jenis' => $t->jenis,
+                        'nominal' => (float) $t->nominal,
+                        'status' => $t->status,
+                        'pihak' => $t->pihak,
+                        'kategori' => $t->kategori,
+                    ]);
+            }
+        }
+
         // Pemasukan & Pengeluaran Terbaru
         $pemasukanTerbaru = (clone $query)->pemasukan()->approved()->orderByDesc('tanggal')->limit(5)->get()
             ->map(fn($t) => ['id' => $t->id, 'tanggal' => $t->tanggal->format('d/m/Y'), 'referensi' => $t->referensi, 'pihak' => $t->pihak, 'kategori' => $t->kategori, 'nominal' => (float) $t->nominal]);
@@ -152,6 +176,7 @@ class CashController extends Controller
             'totalDocuments' => $totalDocuments,
             'totalTransactions' => $totalTransactions,
             'activeUsers' => $activeUsers,
+            'transaksiPerDivisi' => $transaksiPerDivisi,
         ]);
     }
 
@@ -220,7 +245,7 @@ class CashController extends Controller
     {
         $user = $request->user();
 
-        if (!in_array($user->role_type, ['manajer', 'superadmin'])) {
+        if (!in_array($user->role_type, ['manager', 'manajer', 'superadmin'])) {
             abort(403);
         }
 
@@ -244,7 +269,7 @@ class CashController extends Controller
     {
         $user = $request->user();
 
-        if (!in_array($user->role_type, ['manajer', 'superadmin'])) {
+        if (!in_array($user->role_type, ['manager', 'manajer', 'superadmin'])) {
             abort(403);
         }
 

@@ -1,5 +1,6 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 
 function KpiCard({ icon, label, value, prefix = 'Rp ', color = 'text-primary-900' }) {
     const formatted = typeof value === 'number' ? value.toLocaleString('id-ID') : value;
@@ -150,12 +151,17 @@ export default function CashDashboard({
     pembayaranMasuk = 0, piutangBelumLunas = 0,
     distribusiPemasukan = [], distribusiPengeluaran = [], cashFlow = [],
     transaksiTerbaru = [], pemasukanTerbaru = [], pengeluaranTerbaru = [],
+    transaksiPerDivisi = {},
     userRole = '', userDivisi = '',
     totalUsers = 0, totalDocuments = 0, totalTransactions = 0, activeUsers = 0,
 }) {
+    const [activeDivTab, setActiveDivTab] = useState('Tim Logistik');
     const donutColorsP = ['#396A10', '#8B6914', '#1D4ED8', '#7C3AED'];
     const donutColorsK = ['#BA1A1A', '#396A10', '#1D4ED8', '#8B6914', '#6B7280'];
-    const fmt = (v) => 'Rp ' + v.toLocaleString('id-ID');
+    const formatNominal = (nominal, jenis) => {
+        const formatted = 'Rp ' + nominal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return jenis === 'pengeluaran' ? `- ${formatted}` : formatted;
+    };
 
     return (
         <SidebarLayout>
@@ -171,7 +177,7 @@ export default function CashDashboard({
 
                 {/* KPI Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    {(userRole === 'manajer' || userRole === 'superadmin') && (
+                    {(userRole === 'manager' || userRole === 'manajer' || userRole === 'superadmin') && (
                         <>
                             <KpiCard label="Saldo Kas Saat Ini" value={saldoKas} icon={<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="12" rx="2" stroke="#396A10" strokeWidth="1.5"/></svg>} />
                             <KpiCard label="Total Pemasukan" value={totalPemasukan} color="text-[#396A10]" icon={<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2V18M10 2L4 8M10 2L16 8" stroke="#396A10" strokeWidth="1.5" strokeLinecap="round"/></svg>} />
@@ -213,7 +219,7 @@ export default function CashDashboard({
                 {(userRole === 'manajer' || userRole === 'superadmin' || (userRole === 'admin' && userDivisi === 'Sekretaris')) && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                         <DataTable title="Pemasukan Terbaru" columns={['Tanggal', 'No Invoice', 'Pelanggan', 'Kategori', 'Nominal']}
-                            data={pemasukanTerbaru.map(p => [p.tanggal, p.referensi, p.pihak, p.kategori, fmt(p.nominal)])} />
+                            data={pemasukanTerbaru.map(p => [p.tanggal, p.referensi, p.pihak, p.kategori, formatNominal(p.nominal, 'pemasukan')])} />
                         <DonutChart title="Distribusi Pemasukan" data={distribusiPemasukan} colors={donutColorsP} />
                     </div>
                 )}
@@ -223,7 +229,7 @@ export default function CashDashboard({
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                         <DonutChart title="Distribusi Pengeluaran" data={distribusiPengeluaran} colors={donutColorsK} />
                         <DataTable title="Pengeluaran Terbaru" columns={['Tanggal', 'No Invoice', 'Vendor', 'Kategori', 'Nominal']}
-                            data={pengeluaranTerbaru.map(p => [p.tanggal, p.referensi, p.pihak, p.kategori, fmt(p.nominal)])} />
+                            data={pengeluaranTerbaru.map(p => [p.tanggal, p.referensi, p.pihak, p.kategori, formatNominal(p.nominal, 'pengeluaran')])} />
                     </div>
                 )}
 
@@ -234,8 +240,100 @@ export default function CashDashboard({
 
                 {/* Transaksi Terbaru */}
                 <div className="mb-8">
-                    <DataTable title="Transaksi Terbaru" columns={['Tanggal', 'Referensi', 'Jenis', 'Deskripsi', 'Nominal', 'Status']}
-                        data={transaksiTerbaru.map(t => [t.tanggal, t.referensi, t.jenis === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran', t.deskripsi, fmt(t.nominal), t.status])} />
+                    {(userRole === 'manager' || userRole === 'manajer' || userRole === 'superadmin') ? (
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between border-b border-surface-border pb-2">
+                                <h3 className="text-base font-hanken font-bold text-gray-900">Transaksi Terbaru Per Divisi</h3>
+                                <div className="flex gap-2">
+                                    {['Tim Logistik', 'Tim Legal', 'Sekretaris'].map((divName) => (
+                                        <button
+                                            key={divName}
+                                            onClick={() => setActiveDivTab(divName)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-hanken font-medium transition-colors ${
+                                                activeDivTab === divName
+                                                    ? 'bg-primary-700 text-white'
+                                                    : 'bg-white text-gray-600 border border-surface-border hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {divName}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            {(() => {
+                                const divData = transaksiPerDivisi[activeDivTab] || [];
+                                const totalDivSaldo = divData.filter(t => t.status === 'approved').reduce((acc, t) => {
+                                    return t.jenis === 'pemasukan' ? acc + t.nominal : acc - t.nominal;
+                                }, 0);
+                                const tableData = divData.map(t => [
+                                    t.tanggal, 
+                                    t.referensi, 
+                                    t.jenis === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran', 
+                                    t.deskripsi,
+                                    t.pihak,
+                                    <span className={t.jenis === 'pengeluaran' ? 'text-[#BA1A1A] font-semibold' : 'text-[#396A10] font-semibold'}>
+                                        {formatNominal(t.nominal, t.jenis)}
+                                    </span>, 
+                                    t.status
+                                ]);
+                                if (divData.length > 0) {
+                                    tableData.push([
+                                        <strong>Total Sisa Saldo (Disetujui)</strong>,
+                                        '',
+                                        '',
+                                        '',
+                                        '',
+                                        <strong className={totalDivSaldo >= 0 ? 'text-[#396A10]' : 'text-[#BA1A1A]'}>
+                                            {totalDivSaldo >= 0 ? '' : '-' }Rp {Math.abs(totalDivSaldo).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </strong>,
+                                        ''
+                                    ]);
+                                }
+                                return (
+                                    <DataTable 
+                                        title={`Daftar Transaksi - ${activeDivTab}`} 
+                                        columns={['Tanggal', 'Referensi', 'Jenis', 'Deskripsi', 'Pihak', 'Nominal', 'Status']}
+                                        data={tableData} 
+                                    />
+                                );
+                            })()}
+                        </div>
+                    ) : (
+                        (() => {
+                            const totalSaldo = transaksiTerbaru.filter(t => t.status === 'approved').reduce((acc, t) => {
+                                return t.jenis === 'pemasukan' ? acc + t.nominal : acc - t.nominal;
+                            }, 0);
+                            const tableData = transaksiTerbaru.map(t => [
+                                t.tanggal, 
+                                t.referensi, 
+                                t.jenis === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran', 
+                                t.deskripsi, 
+                                <span className={t.jenis === 'pengeluaran' ? 'text-[#BA1A1A] font-semibold' : 'text-[#396A10] font-semibold'}>
+                                    {formatNominal(t.nominal, t.jenis)}
+                                </span>, 
+                                t.status
+                            ]);
+                            if (transaksiTerbaru.length > 0) {
+                                tableData.push([
+                                    <strong>Total Sisa Saldo (Disetujui)</strong>,
+                                    '',
+                                    '',
+                                    '',
+                                    <strong className={totalSaldo >= 0 ? 'text-[#396A10]' : 'text-[#BA1A1A]'}>
+                                        {totalSaldo >= 0 ? '' : '-' }Rp {Math.abs(totalSaldo).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </strong>,
+                                    ''
+                                ]);
+                            }
+                            return (
+                                <DataTable 
+                                    title="Transaksi Terbaru" 
+                                    columns={['Tanggal', 'Referensi', 'Jenis', 'Deskripsi', 'Nominal', 'Status']}
+                                    data={tableData} 
+                                />
+                            );
+                        })()
+                    )}
                 </div>
 
                 {/* Quick Action */}

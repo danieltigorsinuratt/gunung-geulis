@@ -65,7 +65,7 @@ class ClearAllTablesSeeder extends Seeder
             'email'      => 'manager@gmail.com',
             'password'   => Hash::make('password'),
             'role_type'  => 'manager',
-            'divisi'     => 'Tim Logistik',
+            'divisi'     => null,
             'jabatan'    => 'Manajer Utama',
             'status'     => 'Active',
             'created_at' => now(),

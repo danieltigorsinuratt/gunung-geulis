@@ -2,6 +2,48 @@ import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState, useRef } from 'react';
 
+const terbilang = (cleanVal) => {
+    if (cleanVal === 0) return '';
+    const huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+    let temp = "";
+    if (cleanVal < 12) {
+        temp = " " + huruf[cleanVal];
+    } else if (cleanVal < 20) {
+        temp = terbilang(cleanVal - 10) + " belas";
+    } else if (cleanVal < 100) {
+        temp = terbilang(Math.floor(cleanVal / 10)) + " puluh" + terbilang(cleanVal % 10);
+    } else if (cleanVal < 200) {
+        temp = " seratus" + terbilang(cleanVal - 100);
+    } else if (cleanVal < 1000) {
+        temp = terbilang(Math.floor(cleanVal / 100)) + " ratus" + terbilang(cleanVal % 100);
+    } else if (cleanVal < 2000) {
+        temp = " seribu" + terbilang(cleanVal - 1000);
+    } else if (cleanVal < 1000000) {
+        temp = terbilang(Math.floor(cleanVal / 1000)) + " ribu" + terbilang(cleanVal % 1000);
+    } else if (cleanVal < 1000000000) {
+        temp = terbilang(Math.floor(cleanVal / 1000000)) + " juta" + terbilang(cleanVal % 1000000);
+    } else if (cleanVal < 1000000000000) {
+        temp = terbilang(Math.floor(cleanVal / 1000000000)) + " milyar" + terbilang(cleanVal % 1000000000);
+    } else if (cleanVal < 1000000000000000) {
+        temp = terbilang(Math.floor(cleanVal / 1000000000000)) + " trilyun" + terbilang(cleanVal % 1000000000000);
+    }
+    return temp;
+};
+
+const getTerbilangRupiah = (nilai) => {
+    const cleanVal = parseInt(String(nilai).replace(/\D/g, '')) || 0;
+    const hasil = terbilang(cleanVal).trim();
+    if (!hasil) return '';
+    return hasil.charAt(0).toUpperCase() + hasil.slice(1) + " rupiah";
+};
+
+const formatRupiah = (angkaStr) => {
+    if (!angkaStr) return '';
+    const clean = String(angkaStr).replace(/\D/g, '');
+    if (!clean) return '';
+    return clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
 export default function CashCreate({ jenis: initialJenis = '' }) {
     const { data, setData, post, processing, errors } = useForm({
         jenis: initialJenis || 'pemasukan',
@@ -19,11 +61,19 @@ export default function CashCreate({ jenis: initialJenis = '' }) {
 
     const [file, setFile] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [displayNominal, setDisplayNominal] = useState('');
     const fileRef = useRef(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setData(name, value);
+    };
+
+    const handleNominalChange = (e) => {
+        const { value } = e.target;
+        const formatted = formatRupiah(value);
+        setDisplayNominal(formatted);
+        setData('nominal', value.replace(/\D/g, ''));
     };
 
     const handleFileSelect = (e) => {
@@ -72,10 +122,10 @@ export default function CashCreate({ jenis: initialJenis = '' }) {
                     <div className="bg-white rounded-xl border border-surface-border p-6">
                         <label className="block text-xs font-mono font-medium text-gray-600 tracking-wider uppercase mb-4">JENIS TRANSAKSI</label>
                         <div className="flex gap-4">
-                            <button type="button" onClick={() => setData('jenis', 'pemasukan')} className={`flex-1 py-3 rounded-xl border-2 text-center font-hanken font-bold transition-all ${data.jenis === 'pemasukan' ? 'border-[#396A10] bg-[#396A10]/5 text-[#396A10]' : 'border-surface-border text-gray-500 hover:border-gray-400'}`}>
+                            <button type="button" onClick={() => { setData('jenis', 'pemasukan'); setDisplayNominal(''); setData('nominal', ''); }} className={`flex-1 py-3 rounded-xl border-2 text-center font-hanken font-bold transition-all ${data.jenis === 'pemasukan' ? 'border-[#396A10] bg-[#396A10]/5 text-[#396A10]' : 'border-surface-border text-gray-500 hover:border-gray-400'}`}>
                                 Pemasukan
                             </button>
-                            <button type="button" onClick={() => setData('jenis', 'pengeluaran')} className={`flex-1 py-3 rounded-xl border-2 text-center font-hanken font-bold transition-all ${data.jenis === 'pengeluaran' ? 'border-[#BA1A1A] bg-[#BA1A1A]/5 text-[#BA1A1A]' : 'border-surface-border text-gray-500 hover:border-gray-400'}`}>
+                            <button type="button" onClick={() => { setData('jenis', 'pengeluaran'); setDisplayNominal(''); setData('nominal', ''); }} className={`flex-1 py-3 rounded-xl border-2 text-center font-hanken font-bold transition-all ${data.jenis === 'pengeluaran' ? 'border-[#BA1A1A] bg-[#BA1A1A]/5 text-[#BA1A1A]' : 'border-surface-border text-gray-500 hover:border-gray-400'}`}>
                                 Pengeluaran
                             </button>
                         </div>
@@ -116,7 +166,23 @@ export default function CashCreate({ jenis: initialJenis = '' }) {
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     <label className="text-sm font-hanken font-bold text-gray-900">Nominal</label>
-                                    <input type="number" name="nominal" value={data.nominal} onChange={handleChange} placeholder="0" className="w-full px-4 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700" />
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-3 text-sm font-hanken text-gray-400">Rp</span>
+                                        <input 
+                                            type="text" 
+                                            name="nominal_display" 
+                                            value={displayNominal} 
+                                            onChange={handleNominalChange} 
+                                            placeholder="0" 
+                                            className="w-full pl-10 pr-14 py-2.5 bg-surface rounded-lg border border-surface-border text-sm font-hanken text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-primary-700" 
+                                        />
+                                        <span className="absolute right-4 top-3 text-sm font-hanken text-gray-400 font-semibold">,00</span>
+                                    </div>
+                                    {data.nominal && (
+                                        <p className="text-xs font-hanken text-[#396A10] italic mt-1 font-semibold">
+                                            Terbilang: {getTerbilangRupiah(data.nominal)}
+                                        </p>
+                                    )}
                                     {errors.nominal && <p className="text-xs text-red-500">{errors.nominal}</p>}
                                 </div>
                             </div>
